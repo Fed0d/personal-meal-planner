@@ -1,10 +1,7 @@
 package fedod.auth.service.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,6 +10,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "refresh_token")
 public class RefreshToken {
@@ -44,5 +42,9 @@ public class RefreshToken {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+    }
+
+    public boolean isExpired() {
+        return expiresAt.isBefore(LocalDateTime.now());
     }
 }

@@ -1,10 +1,7 @@
 package fedod.auth.service.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,6 +10,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "auth_user")
 public class AuthUser {
@@ -64,5 +62,13 @@ public class AuthUser {
     @PreUpdate
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public boolean isBlocked() {
+        return status == UserStatus.BLOCKED;
+    }
+
+    public boolean isDeleted() {
+        return status == UserStatus.DELETED;
     }
 }
