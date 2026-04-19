@@ -19,12 +19,15 @@ spring:
     change-log: classpath:/db/changelog/db.changelog-master.yml
     enabled: true
 
-security:
+auth:
   jwt:
     private-key-path: classpath:keys/private_key.pem
-    public-key-path: classpath:keys/public_key.pem
     access-token-expiration-minutes: 15
     refresh-token-expiration-days: 30
+
+security:
+  jwt:
+    public-key-path: classpath:keys/public_key.pem
     issuer: auth-service
 
 app:
