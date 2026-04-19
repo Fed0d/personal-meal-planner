@@ -8,7 +8,7 @@ import fedod.auth.service.dto.response.AuthResponse;
 import fedod.auth.service.dto.response.MeResponse;
 import fedod.auth.service.dto.response.MessageResponse;
 import fedod.auth.service.service.AuthService;
-import fedod.auth.service.service.security.JwtUserPrincipal;
+import fedod.security.jwt.model.JwtUserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

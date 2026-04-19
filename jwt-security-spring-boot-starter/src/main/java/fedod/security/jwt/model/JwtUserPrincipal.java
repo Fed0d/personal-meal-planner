@@ -1,4 +1,4 @@
-package fedod.auth.service.service.security;
+package fedod.security.jwt.model;
 
 import java.util.UUID;
 

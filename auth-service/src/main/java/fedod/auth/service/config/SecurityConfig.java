@@ -1,8 +1,8 @@
 package fedod.auth.service.config;
 
-import fedod.auth.service.service.security.CustomAccessDeniedHandler;
-import fedod.auth.service.service.security.CustomAuthenticationEntrypoint;
-import fedod.auth.service.service.security.JwtAuthenticationFilter;
+import fedod.security.jwt.filter.JwtAuthenticationFilter;
+import fedod.security.jwt.handler.JwtAccessDeniedHandler;
+import fedod.security.jwt.handler.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,8 +21,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomAuthenticationEntrypoint customAuthenticationEntryPoint;
-    private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -30,8 +30,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(customAuthenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler)
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
