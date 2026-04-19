@@ -14,6 +14,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "refresh_token")
 public class RefreshToken {
+
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
@@ -46,5 +47,13 @@ public class RefreshToken {
 
     public boolean isExpired() {
         return expiresAt.isBefore(LocalDateTime.now());
+    }
+
+    public boolean isActive() {
+        return !revoked && !isExpired();
+    }
+
+    public void revoke() {
+        this.revoked = true;
     }
 }

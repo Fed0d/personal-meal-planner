@@ -14,6 +14,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "auth_user")
 public class AuthUser {
+
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;

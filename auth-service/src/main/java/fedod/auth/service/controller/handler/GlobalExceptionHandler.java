@@ -1,7 +1,8 @@
 package fedod.auth.service.controller.handler;
 
-import fedod.auth.service.dto.ErrorResponse;
+import fedod.auth.service.dto.response.ErrorResponse;
 import fedod.auth.service.exception.InvalidCredentialsException;
+import fedod.auth.service.exception.InvalidRefreshTokenException;
 import fedod.auth.service.exception.UserAlreadyExistsException;
 import fedod.auth.service.exception.UserBlockedException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +33,7 @@ public class GlobalExceptionHandler {
                 .details(List.of(ex.getClass().getName()))
                 .build();
 
-        return ResponseEntity.status(errorResponse.getStatus()).body(errorResponse);
+        return ResponseEntity.status(errorResponse.status()).body(errorResponse);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
@@ -48,7 +49,7 @@ public class GlobalExceptionHandler {
                 .details(List.of(ex.getClass().getName()))
                 .build();
 
-        return ResponseEntity.status(errorResponse.getStatus()).body(errorResponse);
+        return ResponseEntity.status(errorResponse.status()).body(errorResponse);
     }
 
     @ExceptionHandler(UserBlockedException.class)
@@ -64,7 +65,7 @@ public class GlobalExceptionHandler {
                 .details(List.of(ex.getClass().getName()))
                 .build();
 
-        return ResponseEntity.status(errorResponse.getStatus()).body(errorResponse);
+        return ResponseEntity.status(errorResponse.status()).body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -86,7 +87,24 @@ public class GlobalExceptionHandler {
                 .details(validationErrors)
                 .build();
 
-        return ResponseEntity.status(errorResponse.getStatus()).body(errorResponse);
+        return ResponseEntity.status(errorResponse.status()).body(errorResponse);
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public org.springframework.http.ResponseEntity<ErrorResponse> handleInvalidRefreshToken(
+            InvalidRefreshTokenException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.UNAUTHORIZED.value())
+                        .error("Invalid Refresh Token")
+                        .message(ex.getMessage())
+                        .path(request.getRequestURI())
+                        .details(List.of(ex.getClass().getName()))
+                        .build()
+        );
     }
 
     @ExceptionHandler(Exception.class)
@@ -102,6 +120,6 @@ public class GlobalExceptionHandler {
                 .details(List.of(ex.getClass().getName()))
                 .build();
 
-        return ResponseEntity.status(errorResponse.getStatus()).body(errorResponse);
+        return ResponseEntity.status(errorResponse.status()).body(errorResponse);
     }
 }

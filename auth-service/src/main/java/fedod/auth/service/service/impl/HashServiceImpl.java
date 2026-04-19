@@ -10,6 +10,7 @@ import java.util.HexFormat;
 
 @Service
 public class HashServiceImpl implements HashService {
+
     private static final HexFormat HEX = HexFormat.of();
 
     @Override
