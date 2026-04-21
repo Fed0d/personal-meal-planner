@@ -1,5 +1,7 @@
 package fedod.auth.service.entity;
 
+import fedod.auth.service.entity.enums.UserRole;
+import fedod.auth.service.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

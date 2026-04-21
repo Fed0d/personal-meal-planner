@@ -1,11 +1,11 @@
 server:
-  port: 8080
+  port: 8082
 
 spring:
   application:
-    name: auth-service
+    name: user-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/auth_db
+    url: jdbc:postgresql://localhost:5432/user_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -22,17 +22,17 @@ spring:
     change-log: classpath:/db/changelog/db.changelog-master.yml
     enabled: true
 
-auth:
-  jwt:
-    private-key-path: classpath:keys/private_key.pem
-    access-token-expiration-minutes: 15
-    refresh-token-expiration-days: 30
-
 security:
   jwt:
     public-key-path: classpath:keys/public_key.pem
     issuer: auth-service
+    enabled: true
 
-app:
-  cleanup:
-    refresh-token-cron: "0 0 * * * *"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

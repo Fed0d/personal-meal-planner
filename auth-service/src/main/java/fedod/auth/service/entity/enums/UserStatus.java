@@ -1,4 +1,4 @@
-package fedod.auth.service.entity;
+package fedod.auth.service.entity.enums;
 
 public enum UserStatus {
     ACTIVE,

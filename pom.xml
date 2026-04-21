@@ -29,6 +29,7 @@
     <modules>
         <module>auth-service</module>
         <module>jwt-security-spring-boot-starter</module>
+        <module>user-service</module>
     </modules>
 
     <dependencyManagement>

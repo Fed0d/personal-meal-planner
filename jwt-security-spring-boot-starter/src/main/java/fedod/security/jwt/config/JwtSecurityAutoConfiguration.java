@@ -9,6 +9,8 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import tools.jackson.databind.ObjectMapper;
 
 @AutoConfiguration
@@ -41,5 +43,12 @@ public class JwtSecurityAutoConfiguration {
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenValidator validator,
                                                            JwtAuthenticationEntryPoint entryPoint) {
         return new JwtAuthenticationFilter(validator, entryPoint);
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return username -> {
+            throw new UsernameNotFoundException("User not found");
+        };
     }
 }

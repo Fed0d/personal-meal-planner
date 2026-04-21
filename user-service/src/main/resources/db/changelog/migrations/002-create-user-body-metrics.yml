@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-user-body-metrics
+      author: fedod
+      changes:
+        - createTable:
+            tableName: user_body_metrics
+            columns:
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_body_metrics
+                    nullable: false
+
+              - column:
+                  name: height_cm
+                  type: integer
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: weight_kg
+                  type: numeric(5,2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: target_weight_kg
+                  type: numeric(5,2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_body_metrics
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_body_metrics_user_profile
+            onDelete: cascade

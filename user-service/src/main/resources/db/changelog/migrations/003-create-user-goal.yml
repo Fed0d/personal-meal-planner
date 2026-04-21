@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-user-goal
+      author: fedod
+      changes:
+        - createTable:
+            tableName: user_goal
+            columns:
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_goal
+                    nullable: false
+
+              - column:
+                  name: goal_type
+                  type: varchar(30)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_goal
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_goal_user_profile
+            onDelete: cascade
