@@ -36,7 +36,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     @Transactional
-    public UserProfileResponse createCurrentUserProfile(UUID userId, UpsertUserProfileRequest request) {
+    public UserProfileResponse upsertCurrentUserProfile(UUID userId, UpsertUserProfileRequest request) {
         log.info("Creating user profile for userId: {}", userId);
 
         if (userProfileRepository.existsById(userId)) {
@@ -55,7 +55,10 @@ public class UserProfileServiceImpl implements UserProfileService {
         userProfile.setUserId(userId);
 
         UserBodyMetrics userBodyMetrics = new UserBodyMetrics();
+        userBodyMetrics.setUserProfile(userProfile);
+
         UserGoal userGoal = new UserGoal();
+        userGoal.setUserProfile(userProfile);
 
         userProfile.setUserBodyMetrics(userBodyMetrics);
         userProfile.setUserGoal(userGoal);
@@ -100,11 +103,13 @@ public class UserProfileServiceImpl implements UserProfileService {
         userProfile.setGender(upsertUserProfileRequest.gender());
 
         UserBodyMetrics bodyMetrics = userProfile.getUserBodyMetrics();
+        bodyMetrics.setUserId(userProfile.getUserId());
         bodyMetrics.setHeightCm(upsertUserProfileRequest.heightCm());
         bodyMetrics.setWeightKg(upsertUserProfileRequest.weightKg());
         bodyMetrics.setTargetWeightKg(upsertUserProfileRequest.targetWeightKg());
 
         UserGoal goal = userProfile.getUserGoal();
+        goal.setUserId(userProfile.getUserId());
         goal.setGoalType(upsertUserProfileRequest.goalType());
     }
 

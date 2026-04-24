@@ -3,6 +3,7 @@ package fedod.user.service.controller.handler;
 import fedod.user.service.dto.ErrorResponse;
 import fedod.user.service.exception.UserProfileNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -21,6 +23,7 @@ public class GlobalExceptionHandler {
             UserProfileNotFoundException ex,
             HttpServletRequest request
     ) {
+        log.warn("User profile not found: {}", ex.getMessage());
         return buildResponse(
                 HttpStatus.NOT_FOUND,
                 "User profile not found",
@@ -41,6 +44,7 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .toList();
 
+        log.warn("Validation failed: {}", details);
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Validation failed",
@@ -55,6 +59,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        log.error("Internal server error", ex);
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal server error",

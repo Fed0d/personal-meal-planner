@@ -9,7 +9,7 @@ public interface UserProfileService {
 
     UserProfileResponse getCurrentUserProfile(UUID userId);
 
-    UserProfileResponse createCurrentUserProfile(UUID userId, UpsertUserProfileRequest request);
+    UserProfileResponse upsertCurrentUserProfile(UUID userId, UpsertUserProfileRequest request);
 
     UserProfileResponse updateCurrentUserProfile(UUID userId, UpsertUserProfileRequest request);
 }

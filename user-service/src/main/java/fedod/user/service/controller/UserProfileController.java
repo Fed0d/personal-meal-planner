@@ -29,11 +29,11 @@ public class UserProfileController {
 
     @PutMapping("/me")
     @ResponseStatus(HttpStatus.OK)
-    public UserProfileResponse updateMe(@AuthenticationPrincipal JwtUserPrincipal principal,
+    public UserProfileResponse upsertMe(@AuthenticationPrincipal JwtUserPrincipal principal,
                                         @Valid @RequestBody UpsertUserProfileRequest upsertUserProfileRequest
     ) {
         log.info("Received request to update current user profile for userId: {}", principal.userId());
 
-        return userProfileService.createCurrentUserProfile(principal.userId(), upsertUserProfileRequest);
+        return userProfileService.upsertCurrentUserProfile(principal.userId(), upsertUserProfileRequest);
     }
 }
