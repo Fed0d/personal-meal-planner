@@ -24,6 +24,7 @@
         <java.version>21</java.version>
         <jsonwebtoken.version>0.12.7</jsonwebtoken.version>
         <lombok.version>1.18.44</lombok.version>
+        <spring-cloud.version>2025.1.1</spring-cloud.version>
     </properties>
 
     <modules>
@@ -31,10 +32,20 @@
         <module>jwt-security-spring-boot-starter</module>
         <module>user-service</module>
         <module>meal-service</module>
+        <module>api-gateway</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Cloud -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- JWT -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
