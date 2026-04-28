@@ -1,0 +1,127 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-dish
+      author: fedod
+      changes:
+        - createTable:
+            tableName: dish
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_dish
+                    nullable: false
+
+              - column:
+                  name: url
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: description
+                  type: text
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: dish_image
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: calories
+                  type: numeric(7,2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: protein
+                  type: numeric(6,2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: fat
+                  type: numeric(6,2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: carbs
+                  type: numeric(6,2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: ready_in
+                  type: varchar(50)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: kitchen_time
+                  type: varchar(50)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: cuisine
+                  type: varchar(100)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: category_path
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: recipe
+                  type: text
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: meal_type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            tableName: dish
+            indexName: idx_dish_meal_type
+            columns:
+              - column:
+                  name: meal_type
+
+        - createIndex:
+            tableName: dish
+            indexName: idx_dish_cuisine
+            columns:
+              - column:
+                  name: cuisine
+
+        - createIndex:
+            tableName: dish
+            indexName: idx_dish_calories
+            columns:
+              - column:
+                  name: calories

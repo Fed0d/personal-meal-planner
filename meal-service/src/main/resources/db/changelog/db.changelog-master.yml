@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/migrations/001-create-dish.yml
+  - include:
+      file: db/changelog/migrations/002-create-dish-allergen.yml
+  - include:
+      file: db/changelog/migrations/003-create-dish-ingredient.yml

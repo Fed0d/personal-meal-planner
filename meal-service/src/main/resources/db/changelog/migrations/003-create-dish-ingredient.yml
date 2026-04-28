@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-dish-ingredient
+      author: fedod
+      changes:
+        - createTable:
+            tableName: dish_ingredient
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_dish_ingredient
+                    nullable: false
+
+              - column:
+                  name: dish_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: ingredient
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: dish_ingredient
+            baseColumnNames: dish_id
+            referencedTableName: dish
+            referencedColumnNames: id
+            constraintName: fk_dish_ingredient_dish
+            onDelete: cascade
+
+        - createIndex:
+            tableName: dish_ingredient
+            indexName: idx_dish_ingredient_dish_id
+            columns:
+              - column:
+                  name: dish_id

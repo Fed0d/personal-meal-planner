@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-dish-allergen
+      author: fedod
+      changes:
+        - createTable:
+            tableName: dish_allergen
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_dish_allergen
+                    nullable: false
+
+              - column:
+                  name: dish_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: allergen
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: dish_allergen
+            baseColumnNames: dish_id
+            referencedTableName: dish
+            referencedColumnNames: id
+            constraintName: fk_dish_allergen_dish
+            onDelete: cascade
+
+        - createIndex:
+            tableName: dish_allergen
+            indexName: idx_dish_allergen_dish_id
+            columns:
+              - column:
+                  name: dish_id
