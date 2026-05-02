@@ -33,6 +33,7 @@
         <module>user-service</module>
         <module>meal-service</module>
         <module>meal-plan-service</module>
+        <module>meal-plan-orchestrator</module>
         <module>api-gateway</module>
     </modules>
 
