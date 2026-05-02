@@ -2,11 +2,12 @@ package fedod.user.service.service.impl;
 
 import fedod.user.service.dto.UpsertUserProfileRequest;
 import fedod.user.service.dto.UserProfileResponse;
-import fedod.user.service.entity.UserBodyMetrics;
-import fedod.user.service.entity.UserGoal;
-import fedod.user.service.entity.UserProfile;
+import fedod.user.service.entity.*;
 import fedod.user.service.exception.UserProfileNotFoundException;
+import fedod.user.service.repository.UserCalorieTargetsRepository;
 import fedod.user.service.repository.UserProfileRepository;
+import fedod.user.service.service.BmrCalculationService;
+import fedod.user.service.service.BmrResult;
 import fedod.user.service.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import java.util.UUID;
 public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
+    private final UserCalorieTargetsRepository calorieTargetsRepository;
+    private final BmrCalculationService bmrCalculationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -37,93 +40,124 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     @Transactional
     public UserProfileResponse upsertCurrentUserProfile(UUID userId, UpsertUserProfileRequest request) {
-        log.info("Creating user profile for userId: {}", userId);
+        log.info("Upserting user profile for userId: {}", userId);
 
-        if (userProfileRepository.existsById(userId)) {
-            UserProfile userProfile = userProfileRepository.findById(userId)
-                    .orElseThrow(() -> new UserProfileNotFoundException("User profile not found for userId: " + userId));
+        UserProfile profile = userProfileRepository.findById(userId).orElseGet(() -> {
+            UserProfile p = new UserProfile();
+            p.setUserId(userId);
+            return p;
+        });
 
-            applyUpdates(userProfile, request);
-            UserProfile savedProfile = userProfileRepository.save(userProfile);
-
-            log.info("User profile updated for userId: {}", userId);
-
-            return toResponse(savedProfile);
+        if (profile.getUserBodyMetrics() == null) {
+            profile.setBodyMetrics(new UserBodyMetrics());
+        }
+        if (profile.getUserGoal() == null) {
+            profile.setGoal(new UserGoal());
         }
 
-        UserProfile userProfile = new UserProfile();
-        userProfile.setUserId(userId);
+        applyUpdates(profile, request);
+        recalculateCaloriesIfPossible(profile);
 
-        UserBodyMetrics userBodyMetrics = new UserBodyMetrics();
-        userBodyMetrics.setUserProfile(userProfile);
-
-        UserGoal userGoal = new UserGoal();
-        userGoal.setUserProfile(userProfile);
-
-        userProfile.setUserBodyMetrics(userBodyMetrics);
-        userProfile.setUserGoal(userGoal);
-
-        applyUpdates(userProfile, request);
-
-        UserProfile savedProfile = userProfileRepository.save(userProfile);
-
-        log.info("User profile created for userId: {}", userId);
-
+        UserProfile savedProfile = userProfileRepository.save(profile);
+        log.info("User profile upserted for userId: {}", userId);
         return toResponse(savedProfile);
     }
 
     @Override
+    @Transactional
     public UserProfileResponse updateCurrentUserProfile(UUID userId, UpsertUserProfileRequest request) {
         log.info("Updating user profile for userId: {}", userId);
 
-        UserProfile userProfile = userProfileRepository.findById(userId)
+        UserProfile profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new UserProfileNotFoundException("User profile not found for userId: " + userId));
 
-        if (userProfile.getUserBodyMetrics() == null) {
-            userProfile.setUserBodyMetrics(new UserBodyMetrics());
+        if (profile.getUserBodyMetrics() == null) {
+            profile.setBodyMetrics(new UserBodyMetrics());
+        }
+        if (profile.getUserGoal() == null) {
+            profile.setGoal(new UserGoal());
         }
 
-        if (userProfile.getUserGoal() == null) {
-            userProfile.setGoal(new UserGoal());
-        }
+        applyUpdates(profile, request);
+        recalculateCaloriesIfPossible(profile);
 
-        applyUpdates(userProfile, request);
-
-        UserProfile updatedProfile = userProfileRepository.save(userProfile);
-
+        UserProfile updatedProfile = userProfileRepository.save(profile);
         log.info("User profile updated for userId: {}", userId);
-
         return toResponse(updatedProfile);
     }
 
-    private void applyUpdates(UserProfile userProfile, UpsertUserProfileRequest upsertUserProfileRequest) {
-        userProfile.setFirstName(upsertUserProfileRequest.firstName());
-        userProfile.setLastName(upsertUserProfileRequest.lastName());
-        userProfile.setBirthDate(upsertUserProfileRequest.birthDate());
-        userProfile.setGender(upsertUserProfileRequest.gender());
+    private void applyUpdates(UserProfile profile, UpsertUserProfileRequest request) {
+        profile.setFirstName(request.firstName());
+        profile.setLastName(request.lastName());
+        profile.setBirthDate(request.birthDate());
+        profile.setGender(request.gender());
 
-        UserBodyMetrics bodyMetrics = userProfile.getUserBodyMetrics();
-        bodyMetrics.setUserId(userProfile.getUserId());
-        bodyMetrics.setHeightCm(upsertUserProfileRequest.heightCm());
-        bodyMetrics.setWeightKg(upsertUserProfileRequest.weightKg());
-        bodyMetrics.setTargetWeightKg(upsertUserProfileRequest.targetWeightKg());
+        UserBodyMetrics bodyMetrics = profile.getUserBodyMetrics();
+        bodyMetrics.setUserId(profile.getUserId());
+        bodyMetrics.setHeightCm(request.heightCm());
+        bodyMetrics.setWeightKg(request.weightKg());
+        bodyMetrics.setTargetWeightKg(request.targetWeightKg());
 
-        UserGoal goal = userProfile.getUserGoal();
-        goal.setUserId(userProfile.getUserId());
-        goal.setGoalType(upsertUserProfileRequest.goalType());
+        UserGoal goal = profile.getUserGoal();
+        goal.setUserId(profile.getUserId());
+        goal.setGoalType(request.goalType());
+
+        if (request.activityLevel() != null) {
+            UserActivity activity = profile.getUserActivity();
+            if (activity == null) {
+                activity = new UserActivity();
+                profile.setActivity(activity);
+            }
+            activity.setActivityLevel(request.activityLevel());
+        }
+    }
+
+    private void recalculateCaloriesIfPossible(UserProfile profile) {
+        UserBodyMetrics metrics = profile.getUserBodyMetrics();
+        UserGoal goal = profile.getUserGoal();
+        UserActivity activity = profile.getUserActivity();
+
+        if (profile.getGender() == null || profile.getBirthDate() == null
+                || metrics == null || metrics.getHeightCm() == null || metrics.getWeightKg() == null
+                || goal == null || goal.getGoalType() == null
+                || activity == null || activity.getActivityLevel() == null) {
+            return;
+        }
+
+        BmrResult result = bmrCalculationService.calculate(
+                profile.getGender(), profile.getBirthDate(),
+                metrics.getHeightCm(), metrics.getWeightKg(),
+                activity.getActivityLevel(), goal.getGoalType()
+        );
+
+        UserCalorieTargets targets = profile.getUserCalorieTargets();
+        if (targets == null) {
+            targets = new UserCalorieTargets();
+            profile.setCalorieTargets(targets);
+        }
+        targets.setBmr(result.bmr());
+        targets.setTargetCalories(result.targetCalories());
     }
 
     private UserProfileResponse toResponse(UserProfile profile) {
+        UserBodyMetrics metrics = profile.getUserBodyMetrics();
+        UserGoal goal = profile.getUserGoal();
+        UserActivity activity = profile.getUserActivity();
+        UserCalorieTargets targets = profile.getUserCalorieTargets();
+
         return UserProfileResponse.builder()
                 .userId(profile.getUserId())
                 .firstName(profile.getFirstName())
                 .lastName(profile.getLastName())
                 .birthDate(profile.getBirthDate())
                 .gender(profile.getGender())
-                .heightCm(profile.getUserBodyMetrics() != null ? profile.getUserBodyMetrics().getHeightCm() : null)
-                .weightKg(profile.getUserBodyMetrics() != null ? profile.getUserBodyMetrics().getWeightKg() : null)
-                .targetWeightKg(profile.getUserGoal() != null ? profile.getUserBodyMetrics().getTargetWeightKg() : null)
-                .goalType(profile.getUserGoal() != null ? profile.getUserGoal().getGoalType() : null)
+                .heightCm(metrics != null ? metrics.getHeightCm() : null)
+                .weightKg(metrics != null ? metrics.getWeightKg() : null)
+                .targetWeightKg(metrics != null ? metrics.getTargetWeightKg() : null)
+                .goalType(goal != null ? goal.getGoalType() : null)
+                .activityLevel(activity != null ? activity.getActivityLevel() : null)
+                .bmr(targets != null ? targets.getBmr() : null)
+                .targetCalories(targets != null ? targets.getTargetCalories() : null)
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt())
                 .build();

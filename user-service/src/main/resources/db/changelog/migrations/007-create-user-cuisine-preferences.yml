@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-create-user-cuisine-preferences
+      author: fedod
+      changes:
+        - createTable:
+            tableName: user_cuisine_preferences
+            columns:
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_cuisine_preferences
+                    nullable: false
+
+              - column:
+                  name: asian
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: european
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: eastern
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: slavic
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: american
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: mexican
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_cuisine_preferences
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_cuisine_preferences_user_profile
+            onDelete: CASCADE

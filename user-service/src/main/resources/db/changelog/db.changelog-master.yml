@@ -5,3 +5,15 @@ databaseChangeLog:
       file: db/changelog/migrations/002-create-user-body-metrics.yml
   - include:
       file: db/changelog/migrations/003-create-user-goal.yml
+  - include:
+      file: db/changelog/migrations/004-create-user-activity.yml
+  - include:
+      file: db/changelog/migrations/005-create-user-cooking-preferences.yml
+  - include:
+      file: db/changelog/migrations/006-create-user-calorie-targets.yml
+  - include:
+      file: db/changelog/migrations/007-create-user-cuisine-preferences.yml
+  - include:
+      file: db/changelog/migrations/008-create-user-ingredient-preferences.yml
+  - include:
+      file: db/changelog/migrations/009-create-user-allergens.yml

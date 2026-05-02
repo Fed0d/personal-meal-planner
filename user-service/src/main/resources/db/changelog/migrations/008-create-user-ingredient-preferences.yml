@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-create-user-ingredient-preferences
+      author: fedod
+      changes:
+        - createTable:
+            tableName: user_ingredient_preferences
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_ingredient_preferences
+                    nullable: false
+
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: ingredient_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: score
+                  type: int
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_ingredient_preferences
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_ingredient_preferences_user_profile
+            onDelete: CASCADE
+
+        - addUniqueConstraint:
+            tableName: user_ingredient_preferences
+            columnNames: user_id, ingredient_name
+            constraintName: uq_user_ingredient

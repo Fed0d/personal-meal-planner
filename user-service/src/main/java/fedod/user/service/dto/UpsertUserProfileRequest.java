@@ -1,5 +1,6 @@
 package fedod.user.service.dto;
 
+import fedod.user.service.entity.enums.ActivityLevel;
 import fedod.user.service.entity.enums.Gender;
 import fedod.user.service.entity.enums.GoalType;
 import jakarta.validation.constraints.*;
@@ -24,6 +25,7 @@ public record UpsertUserProfileRequest(
         @DecimalMin(value = "20.00", message = "Target weight must be at least 20 kg")
         @DecimalMax(value = "500.00", message = "Target weight must be at most 500 kg")
         BigDecimal targetWeightKg,
-        GoalType goalType
+        GoalType goalType,
+        ActivityLevel activityLevel
 ) {
 }

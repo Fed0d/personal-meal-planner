@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-user-cooking-preferences
+      author: fedod
+      changes:
+        - createTable:
+            tableName: user_cooking_preferences
+            columns:
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_cooking_preferences
+                    nullable: false
+
+              - column:
+                  name: active_cooking_time_min
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: passive_cooking_time_min
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_cooking_preferences
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_cooking_preferences_user_profile
+            onDelete: CASCADE

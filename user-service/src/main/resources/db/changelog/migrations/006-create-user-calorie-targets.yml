@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-user-calorie-targets
+      author: fedod
+      changes:
+        - createTable:
+            tableName: user_calorie_targets
+            columns:
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_calorie_targets
+                    nullable: false
+
+              - column:
+                  name: bmr
+                  type: decimal(7, 2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: target_calories
+                  type: decimal(7, 2)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_calorie_targets
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_calorie_targets_user_profile
+            onDelete: CASCADE

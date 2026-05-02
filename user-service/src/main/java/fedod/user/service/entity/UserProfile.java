@@ -46,6 +46,21 @@ public class UserProfile {
     @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserGoal userGoal;
 
+    @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserActivity userActivity;
+
+    @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserCookingPreferences userCookingPreferences;
+
+    @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserCalorieTargets userCalorieTargets;
+
+    @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserCuisinePreferences cuisinePreferences;
+
+    @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserAllergens allergens;
+
     public void setBodyMetrics(UserBodyMetrics bodyMetrics) {
         this.userBodyMetrics = bodyMetrics;
         if (bodyMetrics != null) {
@@ -57,6 +72,41 @@ public class UserProfile {
         this.userGoal = goal;
         if (goal != null) {
             goal.setUserProfile(this);
+        }
+    }
+
+    public void setActivity(UserActivity activity) {
+        this.userActivity = activity;
+        if (activity != null) {
+            activity.setUserProfile(this);
+        }
+    }
+
+    public void setCookingPreferences(UserCookingPreferences cookingPreferences) {
+        this.userCookingPreferences = cookingPreferences;
+        if (cookingPreferences != null) {
+            cookingPreferences.setUserProfile(this);
+        }
+    }
+
+    public void setCalorieTargets(UserCalorieTargets calorieTargets) {
+        this.userCalorieTargets = calorieTargets;
+        if (calorieTargets != null) {
+            calorieTargets.setUserProfile(this);
+        }
+    }
+
+    public void setCuisinePreferences(UserCuisinePreferences cuisinePreferences) {
+        this.cuisinePreferences = cuisinePreferences;
+        if (cuisinePreferences != null) {
+            cuisinePreferences.setUserProfile(this);
+        }
+    }
+
+    public void setAllergens(UserAllergens allergens) {
+        this.allergens = allergens;
+        if (allergens != null) {
+            allergens.setUserProfile(this);
         }
     }
 

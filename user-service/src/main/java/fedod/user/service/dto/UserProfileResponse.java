@@ -1,5 +1,6 @@
 package fedod.user.service.dto;
 
+import fedod.user.service.entity.enums.ActivityLevel;
 import fedod.user.service.entity.enums.Gender;
 import fedod.user.service.entity.enums.GoalType;
 import lombok.Builder;
@@ -20,6 +21,9 @@ public record UserProfileResponse(
         BigDecimal weightKg,
         BigDecimal targetWeightKg,
         GoalType goalType,
+        ActivityLevel activityLevel,
+        BigDecimal bmr,
+        BigDecimal targetCalories,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
