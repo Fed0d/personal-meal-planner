@@ -11,6 +11,7 @@ import fedod.meal.plan.orchestrator.entity.enums.JobStatus;
 import fedod.meal.plan.orchestrator.entity.enums.JobType;
 import fedod.meal.plan.orchestrator.exception.JobNotFoundException;
 import fedod.meal.plan.orchestrator.kafka.MealPlanCommandPublisher;
+import fedod.meal.plan.orchestrator.mapper.JobMapper;
 import fedod.meal.plan.orchestrator.repository.JobRepository;
 import fedod.meal.plan.orchestrator.service.OrchestratorJobService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class OrchestratorJobServiceImpl implements OrchestratorJobService {
 
     private final JobRepository jobRepository;
     private final MealPlanCommandPublisher commandPublisher;
+    private final JobMapper jobMapper;
 
     @Override
     @Transactional
@@ -42,7 +44,7 @@ public class OrchestratorJobServiceImpl implements OrchestratorJobService {
                 .build());
 
         log.info("Generate meal plan job created: jobId={}, userId={}, date={}", job.getId(), userId, request.date());
-        return toResponse(job);
+        return jobMapper.toResponse(job);
     }
 
     @Override
@@ -59,14 +61,14 @@ public class OrchestratorJobServiceImpl implements OrchestratorJobService {
                 .build());
 
         log.info("Replace dish job created: jobId={}, userId={}, mealPlanId={}", job.getId(), userId, request.mealPlanId());
-        return toResponse(job);
+        return jobMapper.toResponse(job);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<JobResponse> getUserJobs(UUID userId) {
         return jobRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(this::toResponse)
+                .map(jobMapper::toResponse)
                 .toList();
     }
 
@@ -77,7 +79,7 @@ public class OrchestratorJobServiceImpl implements OrchestratorJobService {
         if (!job.getUserId().equals(requestingUserId)) {
             throw new AccessDeniedException("Access denied to job: " + jobId);
         }
-        return toResponse(job);
+        return jobMapper.toResponse(job);
     }
 
     @Override
@@ -101,17 +103,5 @@ public class OrchestratorJobServiceImpl implements OrchestratorJobService {
     private Job findById(UUID jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new JobNotFoundException("Job not found: " + jobId));
-    }
-
-    private JobResponse toResponse(Job job) {
-        return JobResponse.builder()
-                .id(job.getId())
-                .userId(job.getUserId())
-                .type(job.getType())
-                .status(job.getStatus())
-                .resultMessage(job.getResultMessage())
-                .createdAt(job.getCreatedAt())
-                .updatedAt(job.getUpdatedAt())
-                .build();
     }
 }
