@@ -24,6 +24,11 @@ spring:
               predicates:
                 - Path=/api/v1/dishes/**
 
+            - id: meal-plan-service
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/v1/meal-plans/**
+
 management:
   endpoints:
     web:

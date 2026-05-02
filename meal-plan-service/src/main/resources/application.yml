@@ -1,18 +1,18 @@
 server:
-  port: 8081
+  port: 8084
 
 spring:
   application:
-    name: auth-service
+    name: meal-plan-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/auth_db
+    url: jdbc:postgresql://localhost:5432/meal_plan_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
@@ -22,20 +22,17 @@ spring:
     change-log: classpath:/db/changelog/db.changelog-master.yml
     enabled: true
 
-auth:
-  jwt:
-    private-key-path: classpath:keys/private_key.pem
-    access-token-expiration-minutes: 15
-    refresh-token-expiration-days: 30
-
 security:
   jwt:
     public-key-path: classpath:keys/public_key.pem
     issuer: auth-service
+    enabled: true
 
-service:
-  api-key: ${SERVICE_API_KEY:default-service-secret-key}
-
-app:
-  cleanup:
-    refresh-token-cron: "0 0 * * * *"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

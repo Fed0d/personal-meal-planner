@@ -39,6 +39,21 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
+    public String generateServiceToken() {
+        Instant now = Instant.now();
+        Instant expiration = now.plus(60, ChronoUnit.MINUTES);
+
+        return Jwts.builder()
+                .subject("00000000-0000-0000-0000-000000000000")
+                .issuer(jwtSecurityProperties.getIssuer())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiration))
+                .claim("role", "SERVICE")
+                .signWith(rsaPrivateKeyProvider.getPrivateKey())
+                .compact();
+    }
+
+    @Override
     public String generateRefreshToken() {
         return UUID.randomUUID() + "." + UUID.randomUUID();
     }

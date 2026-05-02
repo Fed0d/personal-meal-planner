@@ -32,6 +32,7 @@
         <module>jwt-security-spring-boot-starter</module>
         <module>user-service</module>
         <module>meal-service</module>
+        <module>meal-plan-service</module>
         <module>api-gateway</module>
     </modules>
 
