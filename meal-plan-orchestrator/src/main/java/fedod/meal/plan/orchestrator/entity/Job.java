@@ -35,6 +35,9 @@ public class Job {
     @Column(name = "result_message")
     private String resultMessage;
 
+    @Column(name = "date")
+    private String date;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

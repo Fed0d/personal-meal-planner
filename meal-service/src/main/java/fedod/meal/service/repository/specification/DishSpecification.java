@@ -53,7 +53,7 @@ public class DishSpecification {
 
     private static Specification<Dish> excludeAllergens(List<String> excludeAllergens) {
         if (excludeAllergens == null || excludeAllergens.isEmpty()) {
-            return null;
+            return (root, query, cb) -> null;
         }
         return (root, query, cb) -> {
             Subquery<Long> subquery = query.subquery(Long.class);

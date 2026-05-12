@@ -36,11 +36,13 @@ public class OrchestratorJobServiceImpl implements OrchestratorJobService {
     @Transactional
     public JobResponse requestGenerate(UUID userId, GenerateMealPlanRequest request) {
         Job job = createJob(userId, JobType.GENERATE_MEAL_PLAN);
+        job.setDate(request.date().toString());
+        jobRepository.save(job);
 
         commandPublisher.publishGenerateMealPlan(GenerateMealPlanCommand.builder()
                 .jobId(job.getId())
                 .userId(userId)
-                .date(request.date())
+                .date(request.date().toString())
                 .build());
 
         log.info("Generate meal plan job created: jobId={}, userId={}, date={}", job.getId(), userId, request.date());

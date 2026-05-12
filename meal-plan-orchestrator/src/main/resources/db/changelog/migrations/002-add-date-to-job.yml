@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-date-to-job
+      author: fedod
+      changes:
+        - addColumn:
+            tableName: job
+            columns:
+              - column:
+                  name: date
+                  type: varchar(20)
+                  constraints:
+                    nullable: true

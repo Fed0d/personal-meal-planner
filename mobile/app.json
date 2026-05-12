@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Meal Planner",
+    "slug": "meal-planner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#34C759"
+    },
+    "ios": { "supportsTablet": true },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#34C759"
+      }
+    }
+  }
+}

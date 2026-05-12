@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-create-user-dish-reactions
+      author: fedod
+      changes:
+        - createTable:
+            tableName: user_dish_reactions
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_dish_reactions
+                    nullable: false
+
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: dish_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: reaction
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_dish_reactions
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_dish_reactions_user_profile
+            onDelete: CASCADE
+
+        - addUniqueConstraint:
+            tableName: user_dish_reactions
+            columnNames: user_id, dish_id
+            constraintName: uq_user_dish_reaction

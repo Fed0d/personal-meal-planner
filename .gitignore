@@ -1,3 +1,4 @@
 .idea
 */target
 *.pem
+*/node_modules

@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/migrations/001-create-job.yml
+  - include:
+      file: db/changelog/migrations/002-add-date-to-job.yml

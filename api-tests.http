@@ -1,0 +1,915 @@
+### ============================================================
+###  MEAL PLANNER — API TESTS (IntelliJ HTTP Client)
+###
+###  Порядок выполнения:
+###    1. Register / Login — получаем токены
+###    2. User Service    — заполняем профиль и анкету
+###    3. Meal Service    — проверяем блюда
+###    4. Orchestrator    — запускаем генерацию плана питания
+###    5. Meal Plan Srv   — смотрим созданный план
+###    6. Orchestrator    — заменяем блюдо в плане
+###    7. Краевые случаи  — 401, 403, 404, 422
+###
+###  Переменные (заполняются автоматически через post-response scripts):
+###    {{accessToken}}   — JWT пользователя
+###    {{refreshToken}}  — refresh token
+###    {{serviceToken}}  — JWT сервиса (ROLE_SERVICE)
+###    {{jobId}}         — id задачи из оркестратора
+###    {{mealPlanId}}    — id плана питания
+###    {{dishId}}        — id блюда из meal-service
+### ============================================================
+
+# ──────────────────────────────────────────────
+# 1. AUTH SERVICE  (port 8081)
+# ──────────────────────────────────────────────
+
+### 1.1 Регистрация нового пользователя
+# Ожидание: 201 Created, тело {"accessToken":"...","refreshToken":"..."}
+# Повторная регистрация с тем же email → 409 Conflict
+POST http://localhost:8081/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Password123"
+}
+
+> {%
+  client.test("Status 201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  client.test("Response has tokens", function() {
+    client.assert(response.body.accessToken !== undefined, "accessToken missing");
+    client.assert(response.body.refreshToken !== undefined, "refreshToken missing");
+  });
+  client.global.set("accessToken", response.body.accessToken);
+  client.global.set("refreshToken", response.body.refreshToken);
+%}
+
+###
+
+### 1.2 Логин существующего пользователя
+# Ожидание: 200 OK, новая пара токенов
+# Неверный пароль → 401 Unauthorized
+POST http://localhost:8081/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Password123"
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.global.set("accessToken", response.body.accessToken);
+  client.global.set("refreshToken", response.body.refreshToken);
+%}
+
+###
+
+### 1.3 Обновление access-токена через refresh
+# Ожидание: 200 OK, новая пара токенов
+# Истёкший или чужой refresh → 401
+POST http://localhost:8081/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.global.set("accessToken", response.body.accessToken);
+  client.global.set("refreshToken", response.body.refreshToken);
+%}
+
+###
+
+### 1.4 Получение информации о текущем пользователе (/me)
+# Ожидание: 200 OK, {"id":"...","email":"testuser@example.com","role":"USER"}
+# Без токена → 401
+GET http://localhost:8081/api/v1/auth/me
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("Email matches", function() {
+    client.assert(response.body.email === "testuser@example.com", "Email mismatch");
+  });
+%}
+
+###
+
+### 1.5 Получение сервисного токена (service-to-service)
+# Ожидание: 200 OK, {"accessToken":"..."} — токен с ROLE_SERVICE
+# Неверный apiKey → 401
+POST http://localhost:8081/api/v1/auth/service/token
+Content-Type: application/json
+
+{
+  "apiKey": "default-service-secret-key"
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.global.set("serviceToken", response.body.accessToken);
+%}
+
+###
+
+### 1.6 Выход (logout) — инвалидация refresh-токена
+# Ожидание: 200 OK, {"message":"Logged out successfully"} (или аналог)
+POST http://localhost:8081/api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+### Перелогиниться после logout, чтобы получить свежий токен
+POST http://localhost:8081/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Password123"
+}
+
+> {%
+  client.global.set("accessToken", response.body.accessToken);
+  client.global.set("refreshToken", response.body.refreshToken);
+%}
+
+# ──────────────────────────────────────────────
+# 2. USER SERVICE  (port 8082)
+# ──────────────────────────────────────────────
+
+### 2.1 Получить профиль — пустой после регистрации
+# Ожидание: 200 OK, поля firstName/lastName могут быть null
+GET http://localhost:8082/api/v1/users/me
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.2 Обновить профиль (upsert)
+# Ожидание: 200 OK, тело с заполненными полями
+# Невалидные данные (heightCm=5) → 400 Bad Request
+PUT http://localhost:8082/api/v1/users/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Иван",
+  "lastName": "Петров",
+  "birthDate": "1995-03-15",
+  "gender": "MALE",
+  "heightCm": 178,
+  "weightKg": 80.5,
+  "targetWeightKg": 75.0,
+  "goalType": "LOSE_WEIGHT",
+  "activityLevel": "MODERATE"
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("firstName saved", function() {
+    client.assert(response.body.firstName === "Иван", "firstName mismatch");
+  });
+%}
+
+###
+
+### 2.3 Отправить анкету (questionnaire)
+# Ожидание: 200 OK, полная QuestionnaireResponse
+# Повторная отправка обновляет данные
+POST http://localhost:8082/api/v1/users/me/questionnaire
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "gender": "MALE",
+  "birthDate": "1995-03-15",
+  "heightCm": 178,
+  "weightKg": 80.5,
+  "targetWeightKg": 75.0,
+  "goalType": "LOSE_WEIGHT",
+  "activityLevel": "MODERATE",
+  "activeCookingTimeMin": 30,
+  "passiveCookingTimeMin": 60,
+  "cuisinePreferences": {
+    "asian": 8,
+    "european": 6,
+    "eastern": 4,
+    "slavic": 9,
+    "american": 5,
+    "mexican": 3
+  },
+  "ingredientPreferences": [
+    { "name": "курица", "score": 9 },
+    { "name": "брокколи", "score": 7 },
+    { "name": "рыба", "score": 5 }
+  ],
+  "allergens": {
+    "nuts": false,
+    "sesame": false,
+    "peanut": false,
+    "fish": false,
+    "crustaceans": false,
+    "molluscs": false,
+    "dairy": false,
+    "gluten": false,
+    "egg": false,
+    "celery": false,
+    "soy": false,
+    "foodAdditives": false,
+    "mustard": false,
+    "strawberry": false,
+    "none": true
+  }
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.4 Получить анкету
+# Ожидание: 200 OK, данные анкеты
+# Если анкета не заполнялась → 404 Not Found
+GET http://localhost:8082/api/v1/users/me/questionnaire
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.5 Получить расчёт калорий
+# Ожидание: 200 OK, {"dailyCalories":..., "protein":..., "fat":..., "carbs":...}
+# Если нет данных тела → 404 или пустые нули
+GET http://localhost:8082/api/v1/users/me/calorie-targets
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("dailyCalories present", function() {
+    client.assert(response.body.dailyCalories !== undefined, "dailyCalories missing");
+  });
+%}
+
+###
+
+### 2.6 Получить кулинарные предпочтения
+# Ожидание: 200 OK, {"activeCookingTimeMin":30, "passiveCookingTimeMin":60}
+GET http://localhost:8082/api/v1/users/me/preferences/cooking
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.7 Обновить кулинарные предпочтения
+# Ожидание: 200 OK
+PUT http://localhost:8082/api/v1/users/me/preferences/cooking
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "activeCookingTimeMin": 45,
+  "passiveCookingTimeMin": 90
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.8 Получить предпочтения кухни
+# Ожидание: 200 OK, баллы от 0 до 10 по каждой кухне
+GET http://localhost:8082/api/v1/users/me/preferences/cuisine
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.9 Обновить предпочтения кухни
+# Ожидание: 200 OK
+PUT http://localhost:8082/api/v1/users/me/preferences/cuisine
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "asian": 10,
+  "european": 7,
+  "eastern": 5,
+  "slavic": 9,
+  "american": 4,
+  "mexican": 2
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.10 Получить предпочтения по ингредиентам
+# Ожидание: 200 OK, список [{name, score}]
+GET http://localhost:8082/api/v1/users/me/preferences/ingredients
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.11 Обновить предпочтения по ингредиентам
+# Ожидание: 200 OK
+PUT http://localhost:8082/api/v1/users/me/preferences/ingredients
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+[
+  { "name": "курица", "score": 10 },
+  { "name": "говядина", "score": 6 },
+  { "name": "шпинат", "score": 8 }
+]
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.12 Получить аллергены
+# Ожидание: 200 OK, {"nuts":false,"dairy":false,...}
+GET http://localhost:8082/api/v1/users/me/allergens
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 2.13 Обновить аллергены
+# Ожидание: 200 OK
+PUT http://localhost:8082/api/v1/users/me/allergens
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "nuts": true,
+  "sesame": false,
+  "peanut": true,
+  "fish": false,
+  "crustaceans": false,
+  "molluscs": false,
+  "dairy": false,
+  "gluten": false,
+  "egg": false,
+  "celery": false,
+  "soy": false,
+  "foodAdditives": false,
+  "mustard": false,
+  "strawberry": false,
+  "none": false
+}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+# ──────────────────────────────────────────────
+# 3. MEAL SERVICE  (port 8083)
+# ──────────────────────────────────────────────
+
+### 3.1 Получить список блюд (с пагинацией)
+# Ожидание: 200 OK, Page<DishSummaryResponse> — content, totalElements и т.д.
+# Фильтры: mealType, cuisine, minCalories, maxCalories, excludeAllergens, title
+GET http://localhost:8083/api/v1/dishes?mealType=BREAKFAST&page=0&size=5
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("Has content array", function() {
+    client.assert(Array.isArray(response.body.content), "content is not array");
+  });
+  if (response.body.content && response.body.content.length > 0) {
+    client.global.set("dishId", response.body.content[0].id);
+  }
+%}
+
+###
+
+### 3.2 Получить список блюд — фильтр по калориям и аллергенам
+# Ожидание: 200 OK, блюда без орехов и арахиса, 300–700 ккал
+GET http://localhost:8083/api/v1/dishes?minCalories=300&maxCalories=700&excludeAllergens=NUTS,PEANUT&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+###
+
+### 3.3 Получить блюдо по id
+# Ожидание: 200 OK, полный DishResponse
+# Несуществующий id → 404 Not Found
+GET http://localhost:8083/api/v1/dishes/{{dishId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("id matches", function() {
+    client.assert(String(response.body.id) === String(client.global.get("dishId")),
+      "id mismatch");
+  });
+%}
+
+###
+
+### 3.4 Создать блюдо вручную
+# Ожидание: 201 Created, DishResponse с заполненными полями
+# Если id уже существует — зависит от реализации (400 или upsert)
+POST http://localhost:8083/api/v1/dishes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "id": 999999,
+  "url": "https://example.com/dishes/test-dish",
+  "title": "Тестовая овсянка с ягодами",
+  "description": "Питательная и быстрая овсяная каша",
+  "dishImage": "https://example.com/images/oatmeal.jpg",
+  "calories": 320.5,
+  "protein": 12.0,
+  "fat": 6.5,
+  "carbs": 55.0,
+  "readyIn": "10 мин",
+  "kitchenTime": "5 мин",
+  "cuisine": "slavic",
+  "categoryPath": "Завтраки / Каши",
+  "recipe": "Залить овсяные хлопья кипятком, настоять 5 минут, добавить ягоды.",
+  "mealType": "BREAKFAST",
+  "allergens": ["GLUTEN"],
+  "ingredients": ["овсяные хлопья", "ягоды", "мёд", "вода"]
+}
+
+> {%
+  client.test("Status 201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  client.test("title matches", function() {
+    client.assert(response.body.title === "Тестовая овсянка с ягодами", "title mismatch");
+  });
+%}
+
+# ──────────────────────────────────────────────
+# 4. MEAL PLAN ORCHESTRATOR  (port 8085)
+# ──────────────────────────────────────────────
+
+### 4.1 Запросить генерацию плана питания
+# Ожидание: 202 Accepted, JobResponse {id, status:"PENDING", type:"GENERATE_MEAL_PLAN"}
+# Kafka публикует generate.mealplan.command → meal-plan-service обрабатывает
+# → публикует job.updated.event → оркестратор обновляет Job до COMPLETED/FAILED
+# Дата в прошлом → 400 (нарушение @FutureOrPresent)
+POST http://localhost:8085/api/v1/orchestrator/plans/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-05-12"
+}
+
+> {%
+  client.test("Status 202 Accepted", function() {
+    client.assert(response.status === 202, "Expected 202, got " + response.status);
+  });
+  client.test("status is PENDING", function() {
+    client.assert(response.body.status === "PENDING", "Expected PENDING, got " + response.body.status);
+  });
+  client.test("type is GENERATE_MEAL_PLAN", function() {
+    client.assert(response.body.type === "GENERATE_MEAL_PLAN", "type mismatch");
+  });
+  client.global.set("jobId", response.body.id);
+%}
+
+###
+
+### 4.2 Получить список всех задач пользователя
+# Ожидание: 200 OK, массив JobResponse, отсортированный по createdAt desc
+# Без токена → 401
+GET http://localhost:8085/api/v1/orchestrator/tasks
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("Is array", function() {
+    client.assert(Array.isArray(response.body), "Expected array");
+  });
+  client.test("At least one job", function() {
+    client.assert(response.body.length >= 1, "Expected at least 1 job");
+  });
+%}
+
+###
+
+### 4.3 Получить конкретную задачу по id
+# Ожидание: 200 OK, один JobResponse
+# Чужой jobId → 403 Forbidden
+# Несуществующий → 404 Not Found
+GET http://localhost:8085/api/v1/orchestrator/tasks/{{jobId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("id matches", function() {
+    client.assert(response.body.id === client.global.get("jobId"), "id mismatch");
+  });
+  client.test("status is valid", function() {
+    const valid = ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"];
+    client.assert(valid.includes(response.body.status), "Unknown status: " + response.body.status);
+  });
+%}
+
+# ──────────────────────────────────────────────
+# 5. MEAL PLAN SERVICE  (port 8084)
+#    (Read endpoints — проверяем, что план создан)
+# ──────────────────────────────────────────────
+
+### 5.1 Получить все планы питания текущего пользователя
+# Ожидание: 200 OK, список MealPlanSummaryResponse (может быть пуст до завершения джобы)
+# Без токена → 401
+GET http://localhost:8084/api/v1/meal-plans/my
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("Is array", function() {
+    client.assert(Array.isArray(response.body), "Expected array");
+  });
+  if (response.body.length > 0) {
+    client.global.set("mealPlanId", response.body[0].id);
+  }
+%}
+
+###
+
+### 5.2 Получить план питания на конкретную дату
+# Ожидание: 200 OK, MealPlanResponse для этой даты
+# Нет плана на дату → 404 Not Found
+GET http://localhost:8084/api/v1/meal-plans/my/date/2026-05-05
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 or 404", function() {
+    client.assert(response.status === 200 || response.status === 404,
+      "Unexpected status: " + response.status);
+  });
+  if (response.status === 200) {
+    client.global.set("mealPlanId", response.body.id);
+    client.test("date matches", function() {
+      client.assert(response.body.date === "2026-05-05", "date mismatch");
+    });
+    client.test("has items", function() {
+      client.assert(Array.isArray(response.body.items), "items is not array");
+    });
+  }
+%}
+
+###
+
+### 5.3 Получить план питания по id
+# Ожидание: 200 OK, MealPlanResponse с items
+# Чужой id → 403 или 404
+GET http://localhost:8084/api/v1/meal-plans/{{mealPlanId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("has items array", function() {
+    client.assert(Array.isArray(response.body.items), "items is not array");
+  });
+%}
+
+###
+
+### 5.4 SERVICE: Создать план питания напрямую (service token)
+# Ожидание: 201 Created, MealPlanResponse
+# Пользовательский токен (ROLE_USER) → 403 Forbidden
+POST http://localhost:8084/api/v1/meal-plans
+Authorization: Bearer {{serviceToken}}
+Content-Type: application/json
+
+{
+  "userId": "00000000-0000-0000-0000-000000000001",
+  "date": "2026-05-10",
+  "items": [
+    {
+      "mealSlot": "BREAKFAST",
+      "dishId": "00000000-0000-0000-0000-000000000101",
+      "dishName": "Овсянка с ягодами",
+      "calories": 320.5
+    },
+    {
+      "mealSlot": "LUNCH",
+      "dishId": "00000000-0000-0000-0000-000000000102",
+      "dishName": "Куриный суп",
+      "calories": 450.0
+    },
+    {
+      "mealSlot": "DINNER",
+      "dishId": "00000000-0000-0000-0000-000000000103",
+      "dishName": "Рыба на пару с овощами",
+      "calories": 380.0
+    }
+  ]
+}
+
+> {%
+  client.test("Status 201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  client.test("items count", function() {
+    client.assert(response.body.items.length === 3, "Expected 3 items");
+  });
+%}
+
+# ──────────────────────────────────────────────
+# 6. ОРКЕСТРАТОР — замена блюда в плане
+# ──────────────────────────────────────────────
+
+### 6.1 Запросить замену блюда
+# Ожидание: 202 Accepted, JobResponse {status:"PENDING", type:"REPLACE_DISH"}
+# Kafka публикует replace.mealplan.command → meal-plan-service находит замену
+# → публикует job.updated.event → оркестратор обновляет Job
+# Несуществующий mealPlanId — ошибка придёт через Kafka (Job → FAILED)
+POST http://localhost:8085/api/v1/orchestrator/plans/replace
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "mealPlanId": "{{mealPlanId}}",
+  "mealSlot": "LUNCH",
+  "currentDishId": "00000000-0000-0000-0000-000000000102"
+}
+
+> {%
+  client.test("Status 202 Accepted", function() {
+    client.assert(response.status === 202, "Expected 202, got " + response.status);
+  });
+  client.test("type is REPLACE_DISH", function() {
+    client.assert(response.body.type === "REPLACE_DISH", "type mismatch");
+  });
+  client.global.set("replaceJobId", response.body.id);
+%}
+
+###
+
+### 6.2 Проверить статус задачи на замену (повторить через несколько секунд)
+# Ожидание: 200 OK, статус COMPLETED или FAILED с resultMessage
+# COMPLETED — блюдо заменено в meal-plan-service
+# FAILED — resultMessage содержит описание ошибки
+GET http://localhost:8085/api/v1/orchestrator/tasks/{{replaceJobId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.log("Job status: " + response.body.status);
+  if (response.body.resultMessage) {
+    client.log("Result: " + response.body.resultMessage);
+  }
+%}
+
+# ──────────────────────────────────────────────
+# 7. КРАЕВЫЕ СЛУЧАИ И БЕЗОПАСНОСТЬ
+# ──────────────────────────────────────────────
+
+### 7.1 Запрос без токена → 401
+GET http://localhost:8082/api/v1/users/me
+
+> {%
+  client.test("Status 401 Unauthorized", function() {
+    client.assert(response.status === 401, "Expected 401, got " + response.status);
+  });
+%}
+
+###
+
+### 7.2 Обращение к SERVICE-эндпоинту с USER-токеном → 403
+# Создать план питания с токеном пользователя — должно вернуть 403
+POST http://localhost:8084/api/v1/meal-plans
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "userId": "00000000-0000-0000-0000-000000000001",
+  "date": "2026-05-15",
+  "items": [
+    {
+      "mealSlot": "BREAKFAST",
+      "dishId": "00000000-0000-0000-0000-000000000101",
+      "dishName": "Тест",
+      "calories": 100.0
+    }
+  ]
+}
+
+> {%
+  client.test("Status 403 Forbidden", function() {
+    client.assert(response.status === 403, "Expected 403, got " + response.status);
+  });
+%}
+
+###
+
+### 7.3 Задача другого пользователя → 403
+# Подставьте UUID задачи, созданной другим пользователем
+GET http://localhost:8085/api/v1/orchestrator/tasks/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 403 or 404", function() {
+    client.assert(response.status === 403 || response.status === 404,
+      "Expected 403 or 404, got " + response.status);
+  });
+%}
+
+###
+
+### 7.4 Валидация: регистрация со слабым паролем → 400
+POST http://localhost:8081/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "bad@example.com",
+  "password": "123"
+}
+
+> {%
+  client.test("Status 400 Bad Request", function() {
+    client.assert(response.status === 400, "Expected 400, got " + response.status);
+  });
+%}
+
+###
+
+### 7.5 Валидация: генерация плана на прошедшую дату → 400
+POST http://localhost:8085/api/v1/orchestrator/plans/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "date": "2020-01-01"
+}
+
+> {%
+  client.test("Status 400 Bad Request", function() {
+    client.assert(response.status === 400, "Expected 400, got " + response.status);
+  });
+%}
+
+###
+
+### 7.6 Неверный пароль при логине → 401
+POST http://localhost:8081/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "WrongPassword!"
+}
+
+> {%
+  client.test("Status 401 Unauthorized", function() {
+    client.assert(response.status === 401, "Expected 401, got " + response.status);
+  });
+%}
+
+###
+
+### 7.7 Повторная регистрация с тем же email → 409
+POST http://localhost:8081/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Password123"
+}
+
+> {%
+  client.test("Status 409 Conflict", function() {
+    client.assert(response.status === 409, "Expected 409, got " + response.status);
+  });
+%}
+
+###
+
+### 7.8 Несуществующее блюдо → 404
+GET http://localhost:8083/api/v1/dishes/999999999
+Authorization: Bearer {{accessToken}}
+
+> {%
+  client.test("Status 404 Not Found", function() {
+    client.assert(response.status === 404, "Expected 404, got " + response.status);
+  });
+%}
+
+###
+
+### 7.9 Невалидный сервисный API-ключ → 401
+POST http://localhost:8081/api/v1/auth/service/token
+Content-Type: application/json
+
+{
+  "apiKey": "wrong-key"
+}
+
+> {%
+  client.test("Status 401 Unauthorized", function() {
+    client.assert(response.status === 401, "Expected 401, got " + response.status);
+  });
+%}
+
+###
+
+### 7.10 Истёкший/невалидный JWT → 401
+GET http://localhost:8082/api/v1/users/me
+Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.invalid.token
+
+> {%
+  client.test("Status 401 Unauthorized", function() {
+    client.assert(response.status === 401, "Expected 401, got " + response.status);
+  });
+%}
