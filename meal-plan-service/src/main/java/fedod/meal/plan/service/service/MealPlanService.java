@@ -1,8 +1,11 @@
 package fedod.meal.plan.service.service;
 
 import fedod.meal.plan.service.dto.CreateMealPlanRequest;
+import fedod.meal.plan.service.dto.MealPlanItemResponse;
 import fedod.meal.plan.service.dto.MealPlanResponse;
 import fedod.meal.plan.service.dto.MealPlanSummaryResponse;
+import fedod.meal.plan.service.dto.UpdateMealPlanItemRequest;
+import fedod.meal.plan.service.entity.enums.MealSlot;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,4 +20,8 @@ public interface MealPlanService {
     MealPlanResponse getByUserAndDate(UUID userId, LocalDate date);
 
     List<MealPlanSummaryResponse> getAllByUser(UUID userId);
+
+    List<Long> getDishIdsByUser(UUID userId);
+
+    MealPlanItemResponse replaceItem(UUID mealPlanId, MealSlot slot, UpdateMealPlanItemRequest request);
 }

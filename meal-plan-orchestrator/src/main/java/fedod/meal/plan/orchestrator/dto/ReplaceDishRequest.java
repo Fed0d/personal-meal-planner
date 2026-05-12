@@ -8,6 +8,6 @@ import java.util.UUID;
 public record ReplaceDishRequest(
         @NotNull UUID mealPlanId,
         @NotBlank String mealSlot,
-        @NotNull UUID currentDishId
+        @NotNull Long currentDishId
 ) {
 }

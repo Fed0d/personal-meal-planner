@@ -16,8 +16,10 @@ public record DishSummaryResponse(
         BigDecimal fat,
         BigDecimal carbs,
         String readyIn,
+        String kitchenTime,
         String cuisine,
         MealType mealType,
-        List<String> allergens
+        List<String> allergens,
+        List<String> ingredients
 ) {
 }

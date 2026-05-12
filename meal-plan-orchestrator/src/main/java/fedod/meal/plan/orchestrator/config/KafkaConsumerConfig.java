@@ -1,5 +1,6 @@
 package fedod.meal.plan.orchestrator.config;
 
+import fedod.meal.plan.orchestrator.dto.kafka.JobUpdatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -15,7 +16,6 @@ import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @EnableKafka
 @Configuration
@@ -25,24 +25,25 @@ public class KafkaConsumerConfig {
     private final Environment environment;
 
     @Bean
-    public ConsumerFactory<String, Object> consumerFactory() {
+    public ConsumerFactory<String, JobUpdatedEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 environment.getProperty("spring.kafka.consumer.bootstrap-servers"));
         props.put(ConsumerConfig.GROUP_ID_CONFIG,
                 environment.getProperty("spring.kafka.consumer.group-id"));
 
-        var jackson = new JacksonJsonDeserializer<>(Object.class, true)
-                .trustedPackages(Objects.requireNonNull(environment.getProperty("spring.kafka.consumer.properties.spring.json.trusted.packages")));
+        // useTypeHeaders=false: deserialize by target class, not Spring __TypeId__ header
+        // (Python publishes plain JSON without Spring type metadata headers)
+        var jackson = new JacksonJsonDeserializer<>(JobUpdatedEvent.class, false);
         var ehd = new ErrorHandlingDeserializer<>(jackson);
 
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), ehd);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
-            ConsumerFactory<String, Object> consumerFactory) {
-        var factory = new ConcurrentKafkaListenerContainerFactory<String, Object>();
+    public ConcurrentKafkaListenerContainerFactory<String, JobUpdatedEvent> kafkaListenerContainerFactory(
+            ConsumerFactory<String, JobUpdatedEvent> consumerFactory) {
+        var factory = new ConcurrentKafkaListenerContainerFactory<String, JobUpdatedEvent>();
         factory.setConsumerFactory(consumerFactory);
         return factory;
     }

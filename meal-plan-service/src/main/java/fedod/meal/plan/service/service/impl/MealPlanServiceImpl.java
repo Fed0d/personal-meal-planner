@@ -4,8 +4,10 @@ import fedod.meal.plan.service.dto.CreateMealPlanRequest;
 import fedod.meal.plan.service.dto.MealPlanItemResponse;
 import fedod.meal.plan.service.dto.MealPlanResponse;
 import fedod.meal.plan.service.dto.MealPlanSummaryResponse;
+import fedod.meal.plan.service.dto.UpdateMealPlanItemRequest;
 import fedod.meal.plan.service.entity.MealPlan;
 import fedod.meal.plan.service.entity.MealPlanItem;
+import fedod.meal.plan.service.entity.enums.MealSlot;
 import fedod.meal.plan.service.exception.MealPlanNotFoundException;
 import fedod.meal.plan.service.repository.MealPlanRepository;
 import fedod.meal.plan.service.service.MealPlanService;
@@ -92,6 +94,43 @@ public class MealPlanServiceImpl implements MealPlanService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getDishIdsByUser(UUID userId) {
+        return mealPlanRepository.findByUserId(userId).stream()
+                .flatMap(plan -> plan.getItems().stream())
+                .map(MealPlanItem::getDishId)
+                .distinct()
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public MealPlanItemResponse replaceItem(UUID mealPlanId, MealSlot slot, UpdateMealPlanItemRequest request) {
+        MealPlan plan = mealPlanRepository.findById(mealPlanId)
+                .orElseThrow(() -> new MealPlanNotFoundException("Meal plan not found: " + mealPlanId));
+
+        MealPlanItem item = plan.getItems().stream()
+                .filter(i -> i.getMealSlot() == slot)
+                .findFirst()
+                .orElseThrow(() -> new MealPlanNotFoundException(
+                        "Slot " + slot + " not found in meal plan: " + mealPlanId));
+
+        item.setDishId(request.dishId());
+        item.setDishName(request.dishName());
+        item.setCalories(request.calories());
+        mealPlanRepository.save(plan);
+
+        log.info("Replaced slot {} in meal plan {} with dish {}", slot, mealPlanId, request.dishId());
+        return MealPlanItemResponse.builder()
+                .id(item.getId())
+                .mealSlot(item.getMealSlot())
+                .dishId(item.getDishId())
+                .dishName(item.getDishName())
+                .calories(item.getCalories())
+                .build();
     }
 
     private MealPlanResponse toResponse(MealPlan plan) {

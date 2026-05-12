@@ -13,7 +13,8 @@
       "Bash(findstr /i \"JsonFormat\")",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\loldf\\\\IdeaProjects\\\\personal-meal-planner\\\\user-service\\\\src\\\\main\\\\java\" -Recurse -File | ForEach-Object { $_.FullName })",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\loldf\\\\IdeaProjects\\\\personal-meal-planner\\\\user-service\\\\src\\\\main\\\\resources\" -Recurse -File | ForEach-Object { $_.FullName })",
-      "PowerShell(Get-NetTCPConnection *)"
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(xargs grep *)"
     ]
   }
 }

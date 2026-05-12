@@ -10,6 +10,6 @@ public record ReplaceDishCommand(
         UUID userId,
         UUID mealPlanId,
         String mealSlot,
-        UUID currentDishId
+        Long currentDishId
 ) {
 }

@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-alter-meal-plan-item-dish-id
+      author: fedod
+      changes:
+        - sql:
+            sql: "TRUNCATE meal_plan_item;"
+        - dropColumn:
+            tableName: meal_plan_item
+            columnName: dish_id
+        - addColumn:
+            tableName: meal_plan_item
+            columns:
+              - column:
+                  name: dish_id
+                  type: bigint
+                  constraints:
+                    nullable: false

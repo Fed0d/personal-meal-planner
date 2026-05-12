@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/migrations/001-create-meal-plan.yml
   - include:
       file: db/changelog/migrations/002-create-meal-plan-item.yml
+  - include:
+      file: db/changelog/migrations/003-alter-meal-plan-item-dish-id.yml

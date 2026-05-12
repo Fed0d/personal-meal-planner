@@ -28,7 +28,7 @@ public class MealPlanItem {
     private MealSlot mealSlot;
 
     @Column(name = "dish_id", nullable = false)
-    private UUID dishId;
+    private Long dishId;
 
     @Column(name = "dish_name", nullable = false, length = 200)
     private String dishName;

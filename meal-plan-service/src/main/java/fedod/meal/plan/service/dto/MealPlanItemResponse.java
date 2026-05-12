@@ -10,7 +10,7 @@ import java.util.UUID;
 public record MealPlanItemResponse(
         UUID id,
         MealSlot mealSlot,
-        UUID dishId,
+        Long dishId,
         String dishName,
         BigDecimal calories
 ) {

@@ -92,9 +92,11 @@ public class DishServiceImpl implements DishService {
                 .fat(dish.getFat())
                 .carbs(dish.getCarbs())
                 .readyIn(dish.getReadyIn())
+                .kitchenTime(dish.getKitchenTime())
                 .cuisine(dish.getCuisine())
                 .mealType(dish.getMealType())
                 .allergens(dish.getAllergens().stream().map(DishAllergen::getAllergen).toList())
+                .ingredients(dish.getIngredients().stream().map(DishIngredient::getIngredient).toList())
                 .build();
     }
 
