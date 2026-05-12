@@ -8,7 +8,6 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 public record SubmitQuestionnaireRequest(
         @NotNull Gender gender,
@@ -21,7 +20,7 @@ public record SubmitQuestionnaireRequest(
         @NotNull @Min(0) @Max(480) Integer activeCookingTimeMin,
         @NotNull @Min(0) @Max(480) Integer passiveCookingTimeMin,
         @NotNull @Valid CuisinePreferencesDto cuisinePreferences,
-        @NotNull List<@Valid IngredientPreferenceDto> ingredientPreferences,
+        @NotNull @Valid IngredientPreferenceDto ingredientPreferences,
         @NotNull @Valid AllergensDto allergens
 ) {
 }

@@ -61,6 +61,9 @@ public class UserProfile {
     @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserAllergens allergens;
 
+    @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserIngredientPreference ingredientPreferences;
+
     public void setBodyMetrics(UserBodyMetrics bodyMetrics) {
         this.userBodyMetrics = bodyMetrics;
         if (bodyMetrics != null) {
@@ -107,6 +110,13 @@ public class UserProfile {
         this.allergens = allergens;
         if (allergens != null) {
             allergens.setUserProfile(this);
+        }
+    }
+
+    public void setIngredientPreferences(UserIngredientPreference ingredientPreferences) {
+        this.ingredientPreferences = ingredientPreferences;
+        if (ingredientPreferences != null) {
+            ingredientPreferences.setUserProfile(this);
         }
     }
 

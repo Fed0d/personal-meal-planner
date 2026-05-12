@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/users")
@@ -66,16 +64,16 @@ public class UserQuestionnaireController {
 
     @GetMapping("/me/preferences/ingredients")
     @ResponseStatus(HttpStatus.OK)
-    public List<IngredientPreferenceDto> getIngredientPreferences(@AuthenticationPrincipal JwtUserPrincipal principal) {
+    public IngredientPreferenceDto getIngredientPreferences(@AuthenticationPrincipal JwtUserPrincipal principal) {
         log.info("Received request to get ingredient preferences for userId: {}", principal.userId());
         return ingredientPreferencesService.get(principal.userId());
     }
 
     @PutMapping("/me/preferences/ingredients")
     @ResponseStatus(HttpStatus.OK)
-    public List<IngredientPreferenceDto> updateIngredientPreferences(
+    public IngredientPreferenceDto updateIngredientPreferences(
             @AuthenticationPrincipal JwtUserPrincipal principal,
-            @Valid @RequestBody List<@Valid IngredientPreferenceDto> request) {
+            @Valid @RequestBody IngredientPreferenceDto request) {
         log.info("Received request to update ingredient preferences for userId: {}", principal.userId());
         return ingredientPreferencesService.update(principal.userId(), request);
     }

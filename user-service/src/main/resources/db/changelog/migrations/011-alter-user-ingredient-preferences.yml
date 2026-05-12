@@ -1,0 +1,147 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-alter-user-ingredient-preferences
+      author: fedod
+      changes:
+        - dropTable:
+            tableName: user_ingredient_preferences
+
+        - createTable:
+            tableName: user_ingredient_preferences
+            columns:
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_user_ingredient_preferences
+                    nullable: false
+
+              - column:
+                  name: fish
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: seafood
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: pork
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: beef
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: chicken
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: cheese
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: potato
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: onion
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: garlic
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: tomatoes
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: liver
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: milk
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: cottage_cheese
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: olives
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: celery
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: cilantro
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: pumpkin
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: eggplant
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: nuts
+                  type: int
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: user_ingredient_preferences
+            baseColumnNames: user_id
+            referencedTableName: user_profile
+            referencedColumnNames: user_id
+            constraintName: fk_user_ingredient_preferences_user_profile
+            onDelete: CASCADE

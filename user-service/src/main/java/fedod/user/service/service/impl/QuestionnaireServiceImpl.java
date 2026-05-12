@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -21,7 +20,6 @@ import java.util.UUID;
 public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     private final UserProfileRepository userProfileRepository;
-    private final UserIngredientPreferenceRepository ingredientPreferenceRepository;
     private final BmrCalculationService bmrCalculationService;
 
     @Override
@@ -43,6 +41,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         applyActivity(profile, request);
         applyCookingPreferences(profile, request);
         applyCuisinePreferences(profile, request);
+        applyIngredientPreferences(profile, request);
         applyAllergens(profile, request);
 
         BmrResult bmrResult = bmrCalculationService.calculate(
@@ -57,18 +56,8 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
 
         userProfileRepository.save(profile);
 
-        ingredientPreferenceRepository.deleteByUserId(userId);
-        List<UserIngredientPreference> ingredients = request.ingredientPreferences().stream()
-                .map(dto -> UserIngredientPreference.builder()
-                        .userId(userId)
-                        .ingredientName(dto.name())
-                        .score(dto.score())
-                        .build())
-                .toList();
-        ingredientPreferenceRepository.saveAll(ingredients);
-
         log.info("Questionnaire submitted for userId: {}", userId);
-        return buildResponse(profile, ingredients);
+        return buildResponse(profile);
     }
 
     @Override
@@ -79,9 +68,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         UserProfile profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new UserProfileNotFoundException("User profile not found for userId: " + userId));
 
-        List<UserIngredientPreference> ingredients = ingredientPreferenceRepository.findByUserId(userId);
-
-        return buildResponse(profile, ingredients);
+        return buildResponse(profile);
     }
 
     private void applyBodyMetrics(UserProfile profile, SubmitQuestionnaireRequest request) {
@@ -138,6 +125,34 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         cuisine.setMexican(dto.mexican());
     }
 
+    private void applyIngredientPreferences(UserProfile profile, SubmitQuestionnaireRequest request) {
+        UserIngredientPreference ingredients = profile.getIngredientPreferences();
+        if (ingredients == null) {
+            ingredients = new UserIngredientPreference();
+            profile.setIngredientPreferences(ingredients);
+        }
+        IngredientPreferenceDto dto = request.ingredientPreferences();
+        ingredients.setFish(dto.fish());
+        ingredients.setSeafood(dto.seafood());
+        ingredients.setPork(dto.pork());
+        ingredients.setBeef(dto.beef());
+        ingredients.setChicken(dto.chicken());
+        ingredients.setCheese(dto.cheese());
+        ingredients.setPotato(dto.potato());
+        ingredients.setOnion(dto.onion());
+        ingredients.setGarlic(dto.garlic());
+        ingredients.setTomatoes(dto.tomatoes());
+        ingredients.setLiver(dto.liver());
+        ingredients.setMilk(dto.milk());
+        ingredients.setCottageCheese(dto.cottageCheese());
+        ingredients.setOlives(dto.olives());
+        ingredients.setCelery(dto.celery());
+        ingredients.setCilantro(dto.cilantro());
+        ingredients.setPumpkin(dto.pumpkin());
+        ingredients.setEggplant(dto.eggplant());
+        ingredients.setNuts(dto.nuts());
+    }
+
     private void applyAllergens(UserProfile profile, SubmitQuestionnaireRequest request) {
         UserAllergens allergens = profile.getAllergens();
         if (allergens == null) {
@@ -172,11 +187,12 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         targets.setTargetCalories(bmrResult.targetCalories());
     }
 
-    private QuestionnaireResponse buildResponse(UserProfile profile, List<UserIngredientPreference> ingredients) {
+    private QuestionnaireResponse buildResponse(UserProfile profile) {
         UserActivity activity = profile.getUserActivity();
         UserCookingPreferences cooking = profile.getUserCookingPreferences();
         UserCalorieTargets targets = profile.getUserCalorieTargets();
         UserCuisinePreferences cuisine = profile.getCuisinePreferences();
+        UserIngredientPreference ingredients = profile.getIngredientPreferences();
         UserAllergens allergens = profile.getAllergens();
 
         CuisinePreferencesDto cuisineDto = cuisine == null ? null : CuisinePreferencesDto.builder()
@@ -188,12 +204,27 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
                 .mexican(cuisine.getMexican())
                 .build();
 
-        List<IngredientPreferenceDto> ingredientDtos = ingredients.stream()
-                .map(i -> IngredientPreferenceDto.builder()
-                        .name(i.getIngredientName())
-                        .score(i.getScore())
-                        .build())
-                .toList();
+        IngredientPreferenceDto ingredientDto = ingredients == null ? null : IngredientPreferenceDto.builder()
+                .fish(ingredients.getFish())
+                .seafood(ingredients.getSeafood())
+                .pork(ingredients.getPork())
+                .beef(ingredients.getBeef())
+                .chicken(ingredients.getChicken())
+                .cheese(ingredients.getCheese())
+                .potato(ingredients.getPotato())
+                .onion(ingredients.getOnion())
+                .garlic(ingredients.getGarlic())
+                .tomatoes(ingredients.getTomatoes())
+                .liver(ingredients.getLiver())
+                .milk(ingredients.getMilk())
+                .cottageCheese(ingredients.getCottageCheese())
+                .olives(ingredients.getOlives())
+                .celery(ingredients.getCelery())
+                .cilantro(ingredients.getCilantro())
+                .pumpkin(ingredients.getPumpkin())
+                .eggplant(ingredients.getEggplant())
+                .nuts(ingredients.getNuts())
+                .build();
 
         AllergensDto allergensDto = allergens == null ? null : AllergensDto.builder()
                 .nuts(allergens.getNuts())
@@ -220,7 +251,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
                 .bmr(targets != null ? targets.getBmr() : null)
                 .targetCalories(targets != null ? targets.getTargetCalories() : null)
                 .cuisinePreferences(cuisineDto)
-                .ingredientPreferences(ingredientDtos)
+                .ingredientPreferences(ingredientDto)
                 .allergens(allergensDto)
                 .build();
     }

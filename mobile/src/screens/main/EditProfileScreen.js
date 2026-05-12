@@ -24,6 +24,28 @@ const CUISINES = [
   { key: 'mexican',     label: '🌮 Мексиканская' },
 ];
 
+const INGREDIENTS = [
+  { key: 'fish',         label: '🐟 Рыба' },
+  { key: 'seafood',      label: '🦐 Морепродукты' },
+  { key: 'pork',         label: '🥩 Свинина' },
+  { key: 'beef',         label: '🥩 Говядина' },
+  { key: 'chicken',      label: '🍗 Курица' },
+  { key: 'cheese',       label: '🧀 Сыр' },
+  { key: 'potato',       label: '🥔 Картофель' },
+  { key: 'onion',        label: '🧅 Лук' },
+  { key: 'garlic',       label: '🧄 Чеснок' },
+  { key: 'tomatoes',     label: '🍅 Помидоры' },
+  { key: 'liver',        label: '🫀 Печень' },
+  { key: 'milk',         label: '🥛 Молоко' },
+  { key: 'cottageCheese',label: '🫙 Творог' },
+  { key: 'olives',       label: '🫒 Оливки' },
+  { key: 'celery',       label: '🌿 Сельдерей' },
+  { key: 'cilantro',     label: '🌿 Кинза' },
+  { key: 'pumpkin',      label: '🎃 Тыква' },
+  { key: 'eggplant',     label: '🍆 Баклажан' },
+  { key: 'nuts',         label: '🥜 Орехи' },
+];
+
 const ALLERGENS = [
   { key: 'nuts',          label: '🥜 Орехи' },
   { key: 'peanut',        label: '🥜 Арахис' },
@@ -46,6 +68,9 @@ const defaultAllergens = () =>
 
 const defaultCuisines = () =>
   Object.fromEntries(CUISINES.map(c => [c.key, 5]));
+
+const defaultIngredients = () =>
+  Object.fromEntries(INGREDIENTS.map(i => [i.key, 5]));
 
 function SectionTitle({ children }) {
   return <Text style={styles.sectionTitle}>{children}</Text>;
@@ -138,17 +163,19 @@ export default function EditProfileScreen({ navigation }) {
   const [activeTime,  setActiveTime]  = useState(30);
   const [passiveTime, setPassiveTime] = useState(60);
 
-  const [cuisines,  setCuisines]  = useState(defaultCuisines());
-  const [allergens, setAllergens] = useState(defaultAllergens());
+  const [cuisines,     setCuisines]     = useState(defaultCuisines());
+  const [ingredients,  setIngredients]  = useState(defaultIngredients());
+  const [allergens,    setAllergens]    = useState(defaultAllergens());
 
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
     try {
-      const [p, c, cu, a] = await Promise.allSettled([
+      const [p, c, cu, ing, a] = await Promise.allSettled([
         userApi.getProfile(),
         userApi.getCookingPrefs(),
         userApi.getCuisinePrefs(),
+        userApi.getIngredientPrefs(),
         userApi.getAllergens(),
       ]);
 
@@ -179,6 +206,17 @@ export default function EditProfileScreen({ navigation }) {
           });
         }
         setCuisines(base);
+      }
+
+      if (ing.status === 'fulfilled' && ing.value) {
+        const base = defaultIngredients();
+        const val  = ing.value;
+        if (val && typeof val === 'object') {
+          Object.keys(base).forEach(k => {
+            if (val[k] != null) base[k] = val[k];
+          });
+        }
+        setIngredients(base);
       }
 
       if (a.status === 'fulfilled' && a.value) {
@@ -218,6 +256,7 @@ export default function EditProfileScreen({ navigation }) {
           passiveCookingTimeMin: passiveTime,
         }),
         userApi.updateCuisinePrefs(cuisines),
+        userApi.updateIngredientPrefs(ingredients),
         userApi.updateAllergens(allergens),
       ]);
       Alert.alert('Сохранено', 'Данные профиля обновлены', [
@@ -330,6 +369,20 @@ export default function EditProfileScreen({ navigation }) {
               label={c.label}
               value={cuisines[c.key] ?? 5}
               onChange={v => setCuisines(prev => ({ ...prev, [c.key]: v }))}
+            />
+          ))}
+        </View>
+
+        {/* ── Ingredient prefs ── */}
+        <View style={styles.section}>
+          <SectionTitle>Предпочтения продуктов</SectionTitle>
+          <Text style={styles.hint}>Оцени каждый продукт от 0 до 10</Text>
+          {INGREDIENTS.map(i => (
+            <ScoreRow
+              key={i.key}
+              label={i.label}
+              value={ingredients[i.key] ?? 5}
+              onChange={v => setIngredients(prev => ({ ...prev, [i.key]: v }))}
             />
           ))}
         </View>

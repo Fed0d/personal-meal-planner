@@ -4,7 +4,6 @@ import fedod.user.service.entity.enums.ActivityLevel;
 import lombok.Builder;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Builder
 public record QuestionnaireResponse(
@@ -14,7 +13,7 @@ public record QuestionnaireResponse(
         BigDecimal bmr,
         BigDecimal targetCalories,
         CuisinePreferencesDto cuisinePreferences,
-        List<IngredientPreferenceDto> ingredientPreferences,
+        IngredientPreferenceDto ingredientPreferences,
         AllergensDto allergens
 ) {
 }

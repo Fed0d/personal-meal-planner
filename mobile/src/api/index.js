@@ -139,6 +139,14 @@ export const user = {
       body: JSON.stringify(data),
     }),
 
+  getIngredientPrefs: () => request(USER, '/api/v1/users/me/preferences/ingredients'),
+
+  updateIngredientPrefs: (data) =>
+    request(USER, '/api/v1/users/me/preferences/ingredients', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
   getAllergens: () => request(USER, '/api/v1/users/me/allergens'),
 
   updateAllergens: (data) =>

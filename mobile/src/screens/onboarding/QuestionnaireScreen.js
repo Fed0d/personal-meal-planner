@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui';
 import { COLORS, FONTS, RADIUS, SPACING, SHADOW } from '../../constants/theme';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const GOALS = [
   { key: 'LOSE_WEIGHT',  label: '🎯 Похудение' },
@@ -31,6 +31,27 @@ const CUISINES = [
   { key: 'slavic',    label: '🥟 Славянская' },
   { key: 'american',  label: '🍔 Американская' },
   { key: 'mexican',   label: '🌮 Мексиканская' },
+];
+const INGREDIENTS = [
+  { key: 'fish',         label: '🐟 Рыба' },
+  { key: 'seafood',      label: '🦐 Морепродукты' },
+  { key: 'pork',         label: '🥩 Свинина' },
+  { key: 'beef',         label: '🥩 Говядина' },
+  { key: 'chicken',      label: '🍗 Курица' },
+  { key: 'cheese',       label: '🧀 Сыр' },
+  { key: 'potato',       label: '🥔 Картофель' },
+  { key: 'onion',        label: '🧅 Лук' },
+  { key: 'garlic',       label: '🧄 Чеснок' },
+  { key: 'tomatoes',     label: '🍅 Помидоры' },
+  { key: 'liver',        label: '🫀 Печень' },
+  { key: 'milk',         label: '🥛 Молоко' },
+  { key: 'cottageCheese',label: '🫙 Творог' },
+  { key: 'olives',       label: '🫒 Оливки' },
+  { key: 'celery',       label: '🌿 Сельдерей' },
+  { key: 'cilantro',     label: '🌿 Кинза' },
+  { key: 'pumpkin',      label: '🎃 Тыква' },
+  { key: 'eggplant',     label: '🍆 Баклажан' },
+  { key: 'nuts',         label: '🥜 Орехи' },
 ];
 const ALLERGENS = [
   { key: 'nuts',          label: '🥜 Орехи' },
@@ -164,6 +185,14 @@ export default function QuestionnaireScreen() {
   });
 
   // Step 4
+  const [ingredients, setIngredients] = useState({
+    fish: 5, seafood: 5, pork: 5, beef: 5, chicken: 5, cheese: 5,
+    potato: 5, onion: 5, garlic: 5, tomatoes: 5, liver: 5, milk: 5,
+    cottageCheese: 5, olives: 5, celery: 5, cilantro: 5,
+    pumpkin: 5, eggplant: 5, nuts: 5,
+  });
+
+  // Step 5
   const [allergens, setAllergens] = useState({
     nuts: false, peanut: false, dairy: false, gluten: false, egg: false,
     fish: false, crustaceans: false, molluscs: false, soy: false,
@@ -196,7 +225,7 @@ export default function QuestionnaireScreen() {
         activeCookingTimeMin: parseInt(activeTime) || 30,
         passiveCookingTimeMin: parseInt(passiveTime) || 60,
         cuisinePreferences: cuisines,
-        ingredientPreferences: [],
+        ingredientPreferences: ingredients,
         allergens,
       });
       await completeQuestionnaire();
@@ -207,7 +236,7 @@ export default function QuestionnaireScreen() {
     }
   }
 
-  const STEP_TITLES = ['Личные данные', 'Готовка', 'Кухни мира', 'Аллергены'];
+  const STEP_TITLES = ['Личные данные', 'Готовка', 'Кухни мира', 'Продукты', 'Аллергены'];
 
   return (
     <KeyboardAvoidingView
@@ -326,8 +355,23 @@ export default function QuestionnaireScreen() {
             </View>
           )}
 
-          {/* ── Step 4: Allergens ── */}
+          {/* ── Step 4: Ingredient preferences ── */}
           {step === 4 && (
+            <View>
+              <Text style={styles.stepHint}>Оцени каждый продукт от 0 до 10</Text>
+              {INGREDIENTS.map(i => (
+                <ScoreRow
+                  key={i.key}
+                  label={i.label}
+                  value={ingredients[i.key]}
+                  onChange={v => setIngredients(prev => ({ ...prev, [i.key]: v }))}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* ── Step 5: Allergens ── */}
+          {step === 5 && (
             <View>
               <Text style={styles.stepHint}>Отметь аллергены, которых следует избегать</Text>
 
