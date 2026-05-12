@@ -17,9 +17,11 @@ const SLOTS = [
 ];
 
 function dateStr(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  // shift to Moscow (UTC+3) then read UTC fields so device timezone doesn't matter
+  const msk = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  const y   = msk.getUTCFullYear();
+  const m   = String(msk.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(msk.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
 
@@ -197,7 +199,11 @@ export default function MealPlanScreen({ navigation }) {
                   </View>
 
                   {item ? (
-                    <View style={styles.dishRow}>
+                    <TouchableOpacity
+                      style={styles.dishRow}
+                      activeOpacity={0.75}
+                      onPress={() => navigation.navigate('DishDetail', { id: item.dishId })}
+                    >
                       <View style={styles.dishThumb}>
                         <Text style={{ fontSize: 28 }}>{slot.emoji}</Text>
                       </View>
@@ -209,7 +215,8 @@ export default function MealPlanScreen({ navigation }) {
                           style={{ alignSelf: 'flex-start', marginTop: 4 }}
                         />
                       </View>
-                    </View>
+                      <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+                    </TouchableOpacity>
                   ) : (
                     <View style={styles.noDish}>
                       <Text style={styles.noDishText}>Блюдо не назначено</Text>

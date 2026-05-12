@@ -47,29 +47,48 @@ export default function TasksScreen() {
   }
 
   function TaskCard({ item }) {
+    const [expanded, setExpanded] = useState(false);
     const status = STATUS_META[item.status] || STATUS_META.PENDING;
     const type   = TYPE_META[item.type]    || { label: item.type, emoji: '📋' };
     const date   = item.createdAt
       ? new Date(item.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
       : '';
+    const hasMessage = !!item.resultMessage;
 
     return (
-      <Card style={[styles.taskCard, SHADOW.sm]}>
-        <View style={[styles.taskIconWrap, { backgroundColor: status.bg }]}>
-          <Text style={styles.taskEmoji}>{type.emoji}</Text>
-        </View>
-        <View style={styles.taskInfo}>
-          <Text style={styles.taskType}>{type.label}</Text>
-          {date ? <Text style={styles.taskDate}>{date}</Text> : null}
-          {item.resultMessage ? (
-            <Text style={styles.taskMsg} numberOfLines={2}>{item.resultMessage}</Text>
-          ) : null}
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: status.color + '18' }]}>
-          <Ionicons name={status.icon} size={13} color={status.color} />
-          <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-        </View>
-      </Card>
+      <TouchableOpacity
+        activeOpacity={hasMessage ? 0.75 : 1}
+        onPress={() => hasMessage && setExpanded(e => !e)}
+      >
+        <Card style={[styles.taskCard, SHADOW.sm]}>
+          <View style={[styles.taskIconWrap, { backgroundColor: status.bg }]}>
+            <Text style={styles.taskEmoji}>{type.emoji}</Text>
+          </View>
+          <View style={styles.taskInfo}>
+            <Text style={styles.taskType}>{type.label}</Text>
+            {date ? <Text style={styles.taskDate}>{date}</Text> : null}
+            {hasMessage && (
+              <Text style={styles.taskMsg} numberOfLines={expanded ? undefined : 2}>
+                {item.resultMessage}
+              </Text>
+            )}
+          </View>
+          <View style={styles.taskRight}>
+            <View style={[styles.statusBadge, { backgroundColor: status.color + '18' }]}>
+              <Ionicons name={status.icon} size={13} color={status.color} />
+              <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+            </View>
+            {hasMessage && (
+              <Ionicons
+                name={expanded ? 'chevron-up' : 'chevron-down'}
+                size={14}
+                color={COLORS.textMuted}
+                style={styles.chevron}
+              />
+            )}
+          </View>
+        </Card>
+      </TouchableOpacity>
     );
   }
 
@@ -137,7 +156,7 @@ const styles = StyleSheet.create({
   list: { padding: SPACING.lg, paddingBottom: 100 },
   taskCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: SPACING.md,
     gap: SPACING.md,
   },
@@ -152,6 +171,10 @@ const styles = StyleSheet.create({
   taskDate:  { fontSize: 11, color: COLORS.textMuted, ...FONTS.regular },
   taskMsg:   { fontSize: 12, color: COLORS.textSecondary, marginTop: 4, ...FONTS.regular },
 
+  taskRight: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -161,4 +184,5 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   statusText: { fontSize: 11, ...FONTS.semiBold },
+  chevron: { alignSelf: 'center' },
 });

@@ -49,6 +49,15 @@ function DishesStack() {
   );
 }
 
+function MealPlanStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MealPlanMain" component={MealPlanScreen} />
+      <Stack.Screen name="DishDetail"   component={DishDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -78,7 +87,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home"     component={HomeScreen}   options={{ tabBarLabel: 'Главная' }} />
-      <Tab.Screen name="MealPlan" component={MealPlanScreen} options={{ tabBarLabel: 'Планы' }} />
+      <Tab.Screen name="MealPlan" component={MealPlanStack}  options={{ tabBarLabel: 'Планы' }} />
       <Tab.Screen name="Dishes"   component={DishesStack}  options={{ tabBarLabel: 'Блюда' }} />
       <Tab.Screen name="Tasks"    component={TasksScreen}  options={{ tabBarLabel: 'Задачи' }} />
       <Tab.Screen name="Profile"  component={ProfileStack}  options={{ tabBarLabel: 'Профиль' }} />
