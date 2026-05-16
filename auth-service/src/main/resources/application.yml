@@ -1,13 +1,13 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/auth_db
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:auth_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -25,8 +25,8 @@ spring:
 auth:
   jwt:
     private-key-path: classpath:keys/private_key.pem
-    access-token-expiration-minutes: 15
-    refresh-token-expiration-days: 30
+    access-token-expiration-minutes: ${JWT_ACCESS_EXPIRATION_MINUTES:15}
+    refresh-token-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:30}
 
 security:
   jwt:
@@ -38,4 +38,4 @@ service:
 
 app:
   cleanup:
-    refresh-token-cron: "0 0 * * * *"
+    refresh-token-cron: "${REFRESH_TOKEN_CRON:0 0 * * * *}"
