@@ -8,10 +8,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { user as userApi } from '../../api';
 import { COLORS, FONTS, RADIUS, SPACING, SHADOW } from '../../constants/theme';
 
-const GOAL_OPTIONS     = ['LOSE_WEIGHT', 'MAINTAIN', 'GAIN_MUSCLE'];
-const GOAL_LABELS      = { LOSE_WEIGHT: '🎯 Похудение', MAINTAIN: '⚖️ Поддержание', GAIN_MUSCLE: '💪 Набор массы' };
-const ACTIVITY_OPTIONS = ['SEDENTARY', 'LIGHT', 'MODERATE', 'ACTIVE', 'VERY_ACTIVE'];
-const ACTIVITY_LABELS  = { SEDENTARY: 'Сидячий', LIGHT: 'Лёгкий', MODERATE: 'Умеренный', ACTIVE: 'Активный', VERY_ACTIVE: 'Очень активный' };
+const GOAL_OPTIONS     = ['LOSE_WEIGHT', 'MAINTAIN_WEIGHT', 'GAIN_WEIGHT'];
+const GOAL_LABELS      = { LOSE_WEIGHT: '🎯 Похудение', MAINTAIN_WEIGHT: '⚖️ Поддержание', GAIN_WEIGHT: '💪 Набор массы' };
+const ACTIVITY_OPTIONS = ['SEDENTARY', 'LOW', 'MODERATE', 'HIGH', 'VERY_HIGH'];
+const ACTIVITY_LABELS  = { SEDENTARY: 'Сидячий', LOW: 'Лёгкий', MODERATE: 'Умеренный', HIGH: 'Активный', VERY_HIGH: 'Очень активный' };
 const GENDER_OPTIONS   = ['MALE', 'FEMALE'];
 const GENDER_LABELS    = { MALE: '👨 Мужской', FEMALE: '👩 Женский' };
 
@@ -157,7 +157,7 @@ export default function EditProfileScreen({ navigation }) {
   const [heightCm,       setHeightCm]       = useState('');
   const [weightKg,       setWeightKg]       = useState('');
   const [targetWeightKg, setTargetWeightKg] = useState('');
-  const [goalType,       setGoalType]       = useState('MAINTAIN');
+  const [goalType,       setGoalType]       = useState('MAINTAIN_WEIGHT');
   const [activityLevel,  setActivityLevel]  = useState('MODERATE');
 
   const [activeTime,  setActiveTime]  = useState(30);
@@ -188,7 +188,7 @@ export default function EditProfileScreen({ navigation }) {
         setHeightCm(v.heightCm != null ? String(v.heightCm) : '');
         setWeightKg(v.weightKg != null ? String(v.weightKg) : '');
         setTargetWeightKg(v.targetWeightKg != null ? String(v.targetWeightKg) : '');
-        setGoalType(v.goalType || 'MAINTAIN');
+        setGoalType(v.goalType || 'MAINTAIN_WEIGHT');
         setActivityLevel(v.activityLevel || 'MODERATE');
       }
 
