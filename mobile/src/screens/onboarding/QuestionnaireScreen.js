@@ -13,16 +13,16 @@ import { COLORS, FONTS, RADIUS, SPACING, SHADOW } from '../../constants/theme';
 const TOTAL_STEPS = 5;
 
 const GOALS = [
-  { key: 'LOSE_WEIGHT',  label: '🎯 Похудение' },
-  { key: 'GAIN_MUSCLE',  label: '💪 Набор массы' },
-  { key: 'MAINTAIN',     label: '⚖️ Поддержание' },
+  { key: 'LOSE_WEIGHT',     label: '🎯 Похудение' },
+  { key: 'GAIN_WEIGHT',     label: '💪 Набор массы' },
+  { key: 'MAINTAIN_WEIGHT', label: '⚖️ Поддержание' },
 ];
 const ACTIVITIES = [
-  { key: 'SEDENTARY',    label: 'Сидячий',        sub: 'Офис, мало движений' },
-  { key: 'LIGHT',        label: 'Лёгкий',          sub: '1–2 тренировки/нед.' },
-  { key: 'MODERATE',     label: 'Умеренный',       sub: '3–4 тренировки/нед.' },
-  { key: 'ACTIVE',       label: 'Активный',        sub: '5+ тренировок/нед.' },
-  { key: 'VERY_ACTIVE',  label: 'Очень активный',  sub: 'Физический труд + спорт' },
+  { key: 'SEDENTARY', label: 'Сидячий',        sub: 'Офис, мало движений' },
+  { key: 'LOW',       label: 'Лёгкий',          sub: '1–2 тренировки/нед.' },
+  { key: 'MODERATE',  label: 'Умеренный',       sub: '3–4 тренировки/нед.' },
+  { key: 'HIGH',      label: 'Активный',        sub: '5+ тренировок/нед.' },
+  { key: 'VERY_HIGH', label: 'Очень активный',  sub: 'Физический труд + спорт' },
 ];
 const CUISINES = [
   { key: 'asian',     label: '🍜 Азиатская' },
