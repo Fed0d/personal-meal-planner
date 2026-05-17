@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Switch, KeyboardAvoidingView, Platform, Alert,
+  TextInput, Switch, KeyboardAvoidingView, Platform, Alert, Keyboard,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -154,6 +154,7 @@ function NumberInput({ label, value, onChange, placeholder, suffix }) {
           keyboardType="numeric"
           placeholder={placeholder || '0'}
           placeholderTextColor={COLORS.textMuted}
+          maxLength={3}
         />
         {suffix && <Text style={styles.numSuffix}>{suffix}</Text>}
       </View>
@@ -161,10 +162,14 @@ function NumberInput({ label, value, onChange, placeholder, suffix }) {
   );
 }
 
+
 export default function QuestionnaireScreen() {
   const { completeQuestionnaire } = useAuth();
-  const [step, setStep]     = useState(1);
+  const [step, setStep]       = useState(1);
   const [loading, setLoading] = useState(false);
+
+  const handleBack = useCallback(() => { Keyboard.dismiss(); setStep(s => s - 1); }, []);
+  const handleNext = useCallback(() => { Keyboard.dismiss(); setStep(s => s + 1); }, []);
 
   // Step 1
   const [gender, setGender]         = useState('MALE');
@@ -254,216 +259,158 @@ export default function QuestionnaireScreen() {
 
   const STEP_TITLES = ['Личные данные', 'Готовка', 'Кухни мира', 'Продукты', 'Аллергены'];
 
+  const stepContent = (
+    <>
+      {step === 1 && (
+        <View>
+          <Text style={styles.sectionLabel}>Пол</Text>
+          <ChipGroup
+            options={[{ key: 'MALE', label: '👨 Мужской' }, { key: 'FEMALE', label: '👩 Женский' }]}
+            value={gender} onChange={setGender}
+          />
+          <Text style={styles.sectionLabel}>Дата рождения</Text>
+          <TextInput
+            style={styles.textField}
+            value={birthDate} onChangeText={handleBirthDateInput}
+            placeholder="ДД-ММ-ГГГГ" placeholderTextColor={COLORS.textMuted}
+            keyboardType="numeric" maxLength={10}
+          />
+          <View style={styles.row3}>
+            <NumberInput label="Рост" value={height} onChange={setHeight} suffix="см" />
+            <NumberInput label="Вес" value={weight} onChange={setWeight} suffix="кг" />
+            <NumberInput label="Цель" value={targetWeight} onChange={setTarget} suffix="кг" />
+          </View>
+          <Text style={styles.sectionLabel}>Цель</Text>
+          <ChipGroup options={GOALS} value={goalType} onChange={setGoal} />
+          <Text style={styles.sectionLabel}>Активность</Text>
+          <ChipGroup options={ACTIVITIES} value={activity} onChange={setActivity} />
+        </View>
+      )}
+
+      {step === 2 && (
+        <View>
+          <View style={styles.cookingCard}>
+            <Text style={styles.cookingIcon}>🍳</Text>
+            <Text style={styles.cookingTitle}>Активное приготовление</Text>
+            <Text style={styles.cookingDesc}>Время, которое вы проводите у плиты</Text>
+            <View style={styles.cookingInput}>
+              <TouchableOpacity style={styles.timeBtn} onPress={() => setActiveTime(v => String(Math.max(5, parseInt(v) - 5)))}>
+                <Ionicons name="remove" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+              <Text style={styles.timeNum}>{activeTime} мин</Text>
+              <TouchableOpacity style={styles.timeBtn} onPress={() => setActiveTime(v => String(Math.min(180, parseInt(v) + 5)))}>
+                <Ionicons name="add" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={[styles.cookingCard, { marginTop: SPACING.md }]}>
+            <Text style={styles.cookingIcon}>⏲️</Text>
+            <Text style={styles.cookingTitle}>Пассивное приготовление</Text>
+            <Text style={styles.cookingDesc}>Тушение, запекание — без участия</Text>
+            <View style={styles.cookingInput}>
+              <TouchableOpacity style={styles.timeBtn} onPress={() => setPassiveTime(v => String(Math.max(0, parseInt(v) - 5)))}>
+                <Ionicons name="remove" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+              <Text style={styles.timeNum}>{passiveTime} мин</Text>
+              <TouchableOpacity style={styles.timeBtn} onPress={() => setPassiveTime(v => String(Math.min(300, parseInt(v) + 5)))}>
+                <Ionicons name="add" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {step === 3 && (
+        <View>
+          <Text style={styles.stepHint}>Оцени каждую кухню от 0 до 10</Text>
+          {CUISINES.map(c => (
+            <ScoreRow key={c.key} label={c.label} value={cuisines[c.key]}
+              onChange={v => setCuisines(prev => ({ ...prev, [c.key]: v }))} />
+          ))}
+        </View>
+      )}
+
+      {step === 4 && (
+        <View>
+          <Text style={styles.stepHint}>Оцени каждый продукт от 0 до 10</Text>
+          {INGREDIENTS.map(i => (
+            <ScoreRow key={i.key} label={i.label} value={ingredients[i.key]}
+              onChange={v => setIngredients(prev => ({ ...prev, [i.key]: v }))} />
+          ))}
+        </View>
+      )}
+
+      {step === 5 && (
+        <View>
+          <Text style={styles.stepHint}>Отметь аллергены, которых следует избегать</Text>
+          <TouchableOpacity
+            style={[styles.allergenRow, allergens.none && styles.allergenRowActive]}
+            onPress={() => toggleAllergen('none')}
+          >
+            <Text style={styles.allergenLabel}>✅ Нет аллергенов</Text>
+            <Switch value={allergens.none} onValueChange={() => toggleAllergen('none')}
+              trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+              thumbColor={allergens.none ? COLORS.primary : '#fff'} />
+          </TouchableOpacity>
+          {!allergens.none && ALLERGENS.map(a => (
+            <TouchableOpacity key={a.key}
+              style={[styles.allergenRow, allergens[a.key] && styles.allergenRowActive]}
+              onPress={() => toggleAllergen(a.key)}
+            >
+              <Text style={styles.allergenLabel}>{a.label}</Text>
+              <Switch value={allergens[a.key]} onValueChange={() => toggleAllergen(a.key)}
+                trackColor={{ false: COLORS.border, true: '#FFCDD2' }}
+                thumbColor={allergens[a.key] ? COLORS.error : '#fff'} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.footer}>
+        {step > 1 && (
+          <Button title="Назад" variant="outline" onPress={handleBack} style={styles.footerBtnBack} />
+        )}
+        {step < TOTAL_STEPS ? (
+          <Button title="Далее →" onPress={handleNext} style={styles.footerBtnNext} />
+        ) : (
+          <Button title="Готово ✓" onPress={handleSubmit} loading={loading} style={styles.footerBtnNext} />
+        )}
+      </View>
+    </>
+  );
+
+  const header = (
+    <LinearGradient
+      colors={[COLORS.primaryDark, COLORS.primary]}
+      style={styles.header}
+      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+    >
+      <Text style={styles.headerStep}>Шаг {step} из {TOTAL_STEPS}</Text>
+      <Text style={styles.headerTitle}>{STEP_TITLES[step - 1]}</Text>
+      <ProgressBar step={step} />
+    </LinearGradient>
+  );
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={Platform.OS === 'web' ? { height: '100vh' } : { flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[COLORS.primaryDark, COLORS.primary]}
-          style={styles.header}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        >
-          <Text style={styles.headerStep}>Шаг {step} из {TOTAL_STEPS}</Text>
-          <Text style={styles.headerTitle}>{STEP_TITLES[step - 1]}</Text>
-          <ProgressBar step={step} />
-        </LinearGradient>
-
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* ── Step 1: Personal info ── */}
-          {step === 1 && (
-            <View>
-              <Text style={styles.sectionLabel}>Пол</Text>
-              <ChipGroup
-                options={[{ key: 'MALE', label: '👨 Мужской' }, { key: 'FEMALE', label: '👩 Женский' }]}
-                value={gender}
-                onChange={setGender}
-              />
-
-              <Text style={styles.sectionLabel}>Дата рождения</Text>
-              <TextInput
-                style={styles.textField}
-                value={birthDate}
-                onChangeText={handleBirthDateInput}
-                placeholder="ДД-ММ-ГГГГ"
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="numeric"
-                maxLength={10}
-              />
-
-              <View style={styles.row3}>
-                <NumberInput label="Рост" value={height} onChange={setHeight} suffix="см" />
-                <NumberInput label="Вес" value={weight} onChange={setWeight} suffix="кг" />
-                <NumberInput label="Цель" value={targetWeight} onChange={setTarget} suffix="кг" />
-              </View>
-
-              <Text style={styles.sectionLabel}>Цель</Text>
-              <ChipGroup options={GOALS} value={goalType} onChange={setGoal} />
-
-              <Text style={styles.sectionLabel}>Активность</Text>
-              <ChipGroup options={ACTIVITIES} value={activity} onChange={setActivity} />
-            </View>
-          )}
-
-          {/* ── Step 2: Cooking times ── */}
-          {step === 2 && (
-            <View>
-              <View style={styles.cookingCard}>
-                <Text style={styles.cookingIcon}>🍳</Text>
-                <Text style={styles.cookingTitle}>Активное приготовление</Text>
-                <Text style={styles.cookingDesc}>Время, которое вы проводите у плиты</Text>
-                <View style={styles.cookingInput}>
-                  <TouchableOpacity
-                    style={styles.timeBtn}
-                    onPress={() => setActiveTime(v => String(Math.max(5, parseInt(v) - 5)))}
-                  >
-                    <Ionicons name="remove" size={20} color={COLORS.primary} />
-                  </TouchableOpacity>
-                  <Text style={styles.timeNum}>{activeTime} мин</Text>
-                  <TouchableOpacity
-                    style={styles.timeBtn}
-                    onPress={() => setActiveTime(v => String(Math.min(180, parseInt(v) + 5)))}
-                  >
-                    <Ionicons name="add" size={20} color={COLORS.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={[styles.cookingCard, { marginTop: SPACING.md }]}>
-                <Text style={styles.cookingIcon}>⏲️</Text>
-                <Text style={styles.cookingTitle}>Пассивное приготовление</Text>
-                <Text style={styles.cookingDesc}>Тушение, запекание — без участия</Text>
-                <View style={styles.cookingInput}>
-                  <TouchableOpacity
-                    style={styles.timeBtn}
-                    onPress={() => setPassiveTime(v => String(Math.max(0, parseInt(v) - 5)))}
-                  >
-                    <Ionicons name="remove" size={20} color={COLORS.primary} />
-                  </TouchableOpacity>
-                  <Text style={styles.timeNum}>{passiveTime} мин</Text>
-                  <TouchableOpacity
-                    style={styles.timeBtn}
-                    onPress={() => setPassiveTime(v => String(Math.min(300, parseInt(v) + 5)))}
-                  >
-                    <Ionicons name="add" size={20} color={COLORS.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* ── Step 3: Cuisine preferences ── */}
-          {step === 3 && (
-            <View>
-              <Text style={styles.stepHint}>Оцени каждую кухню от 0 до 10</Text>
-              {CUISINES.map(c => (
-                <ScoreRow
-                  key={c.key}
-                  label={c.label}
-                  value={cuisines[c.key]}
-                  onChange={v => setCuisines(prev => ({ ...prev, [c.key]: v }))}
-                />
-              ))}
-            </View>
-          )}
-
-          {/* ── Step 4: Ingredient preferences ── */}
-          {step === 4 && (
-            <View>
-              <Text style={styles.stepHint}>Оцени каждый продукт от 0 до 10</Text>
-              {INGREDIENTS.map(i => (
-                <ScoreRow
-                  key={i.key}
-                  label={i.label}
-                  value={ingredients[i.key]}
-                  onChange={v => setIngredients(prev => ({ ...prev, [i.key]: v }))}
-                />
-              ))}
-            </View>
-          )}
-
-          {/* ── Step 5: Allergens ── */}
-          {step === 5 && (
-            <View>
-              <Text style={styles.stepHint}>Отметь аллергены, которых следует избегать</Text>
-
-              <TouchableOpacity
-                style={[styles.allergenRow, allergens.none && styles.allergenRowActive]}
-                onPress={() => toggleAllergen('none')}
-              >
-                <Text style={styles.allergenLabel}>✅ Нет аллергенов</Text>
-                <Switch
-                  value={allergens.none}
-                  onValueChange={() => toggleAllergen('none')}
-                  trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
-                  thumbColor={allergens.none ? COLORS.primary : '#fff'}
-                />
-              </TouchableOpacity>
-
-              {!allergens.none && ALLERGENS.map(a => (
-                <TouchableOpacity
-                  key={a.key}
-                  style={[styles.allergenRow, allergens[a.key] && styles.allergenRowActive]}
-                  onPress={() => toggleAllergen(a.key)}
-                >
-                  <Text style={styles.allergenLabel}>{a.label}</Text>
-                  <Switch
-                    value={allergens[a.key]}
-                    onValueChange={() => toggleAllergen(a.key)}
-                    trackColor={{ false: COLORS.border, true: '#FFCDD2' }}
-                    thumbColor={allergens[a.key] ? COLORS.error : '#fff'}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Footer buttons */}
-        <View style={styles.footer}>
-          {step > 1 && (
-            <Button
-              title="Назад"
-              variant="outline"
-              onPress={() => setStep(s => s - 1)}
-              style={styles.footerBtnBack}
-            />
-          )}
-          {step < TOTAL_STEPS ? (
-            <Button
-              title="Далее →"
-              onPress={() => setStep(s => s + 1)}
-              style={styles.footerBtnNext}
-            />
-          ) : (
-            <Button
-              title="Готово ✓"
-              onPress={handleSubmit}
-              loading={loading}
-              style={styles.footerBtnNext}
-            />
-          )}
+      {header}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <View style={styles.stepWrap}>
+          {stepContent}
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-
   header: {
-    paddingTop: 64,
-    paddingHorizontal: SPACING.lg,
+    paddingTop: 60,
     paddingBottom: SPACING.lg,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingHorizontal: SPACING.lg,
   },
   headerStep:  { fontSize: 12, color: 'rgba(255,255,255,0.75)', ...FONTS.medium, marginBottom: 4 },
   headerTitle: { fontSize: 22, color: '#fff', ...FONTS.bold, marginBottom: SPACING.md },
@@ -475,8 +422,9 @@ const styles = StyleSheet.create({
   progressDotDone:   { backgroundColor: '#fff' },
   progressDotActive: { backgroundColor: '#fff' },
 
-  scroll:  { flex: 1 },
-  content: { padding: SPACING.lg, paddingBottom: 120 },
+  scroll:   { flex: 1, backgroundColor: COLORS.background },
+  content:  { paddingBottom: 60 },
+  stepWrap: { padding: SPACING.lg },
 
   sectionLabel: {
     fontSize: 14, color: COLORS.textSecondary, ...FONTS.semiBold,
@@ -573,13 +521,15 @@ const styles = StyleSheet.create({
   allergenRowActive: { borderColor: COLORS.error, backgroundColor: '#FFF8F8' },
   allergenLabel: { fontSize: 14, color: COLORS.text, ...FONTS.medium },
 
-  // Footer
+  // Footer (inside ScrollView — no fixed positioning needed)
   footer: {
     flexDirection: 'row', gap: SPACING.sm,
-    padding: SPACING.lg, paddingBottom: 36,
+    padding: SPACING.lg, marginTop: SPACING.md,
     backgroundColor: COLORS.surface,
-    borderTopWidth: 1, borderTopColor: COLORS.border,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1, borderColor: COLORS.border,
   },
   footerBtnBack: { flex: 1 },
   footerBtnNext: { flex: 2 },
 });
+

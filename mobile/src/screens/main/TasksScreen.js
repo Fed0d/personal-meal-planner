@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl,
   TouchableOpacity, ActivityIndicator,
@@ -8,6 +8,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { orchestrator } from '../../api';
 import { Card, EmptyState } from '../../components/ui';
 import { COLORS, FONTS, RADIUS, SPACING, SHADOW } from '../../constants/theme';
+
+const POLL_INTERVAL = 1000;
+const ACTIVE_STATUSES = new Set(['PENDING', 'IN_PROGRESS']);
 
 const STATUS_META = {
   PENDING:     { label: 'Ожидает',    color: COLORS.pending,    icon: 'time-outline',              bg: '#FFF8EC' },
@@ -22,11 +25,30 @@ const TYPE_META = {
 };
 
 export default function TasksScreen() {
-  const [tasks, setTasks]         = useState([]);
-  const [loading, setLoading]     = useState(false);
+  const [tasks, setTasks]           = useState([]);
+  const [loading, setLoading]       = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const hasActiveRef = useRef(false);
+  const pollRef      = useRef(null);
 
-  useFocusEffect(useCallback(() => { loadTasks(); }, []));
+  // Keep ref in sync so the interval closure can read current state
+  useEffect(() => {
+    hasActiveRef.current = tasks.some(t => ACTIVE_STATUSES.has(t.status));
+  }, [tasks]);
+
+  useFocusEffect(useCallback(() => {
+    loadTasks();
+
+    pollRef.current = setInterval(async () => {
+      if (!hasActiveRef.current) return;
+      try {
+        const data = await orchestrator.getTasks();
+        setTasks(Array.isArray(data) ? data : []);
+      } catch {}
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(pollRef.current);
+  }, []));
 
   async function loadTasks() {
     setLoading(true);
