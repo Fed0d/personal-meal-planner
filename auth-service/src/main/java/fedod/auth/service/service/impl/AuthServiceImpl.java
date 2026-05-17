@@ -18,6 +18,10 @@ import fedod.auth.service.repository.RefreshTokenRepository;
 import fedod.auth.service.service.AuthService;
 import fedod.auth.service.service.HashService;
 import fedod.auth.service.service.JwtService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +41,25 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final HashService hashService;
     private final JwtProperties jwtProperties;
+    private final MeterRegistry meterRegistry;
+
+    private Counter registrationsCounter;
+    private Counter loginsCounter;
+
+    @PostConstruct
+    void initMetrics() {
+        registrationsCounter = Counter.builder("auth.registrations")
+                .description("Total successful user registrations")
+                .register(meterRegistry);
+
+        loginsCounter = Counter.builder("auth.logins")
+                .description("Total successful user logins")
+                .register(meterRegistry);
+
+        Gauge.builder("auth.users.registered", authUserRepository, repo -> (double) repo.count())
+                .description("Total registered users")
+                .register(meterRegistry);
+    }
 
 
     @Override
@@ -59,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         AuthUser savedUser = authUserRepository.save(user);
+        registrationsCounter.increment();
 
         log.info("User registered successfully with email: {}", savedUser.getEmail());
 
@@ -93,6 +117,7 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
+        loginsCounter.increment();
         return issueTokens(user);
     }
 

@@ -39,7 +39,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout",
-                                "/api/v1/auth/service/token"
+                                "/api/v1/auth/service/token",
+                                "/actuator",
+                                "/actuator/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

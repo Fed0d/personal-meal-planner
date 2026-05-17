@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: auth-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['auth-service:8080']
+
+  - job_name: user-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['user-service:8080']
+
+  - job_name: meal-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['meal-service:8080']
+
+  - job_name: meal-plan-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['meal-plan-service:8080']
+
+  - job_name: meal-plan-orchestrator
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['meal-plan-orchestrator:8080']
+
+  - job_name: api-gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['api-gateway:8080']
