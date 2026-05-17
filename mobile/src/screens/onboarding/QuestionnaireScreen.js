@@ -168,7 +168,7 @@ export default function QuestionnaireScreen() {
 
   // Step 1
   const [gender, setGender]         = useState('MALE');
-  const [birthDate, setBirthDate]   = useState('1995-01-01');
+  const [birthDate, setBirthDate]   = useState('01-01-1995');
   const [height, setHeight]         = useState('170');
   const [weight, setWeight]         = useState('70');
   const [targetWeight, setTarget]   = useState('65');
@@ -211,12 +211,28 @@ export default function QuestionnaireScreen() {
     }
   }
 
+  function handleBirthDateInput(text) {
+    const digits = text.replace(/\D/g, '').slice(0, 8);
+    let formatted = digits;
+    if (digits.length > 4) {
+      formatted = digits.slice(0, 2) + '-' + digits.slice(2, 4) + '-' + digits.slice(4);
+    } else if (digits.length > 2) {
+      formatted = digits.slice(0, 2) + '-' + digits.slice(2);
+    }
+    setBirthDate(formatted);
+  }
+
+  function birthDateForApi() {
+    const [dd, mm, yyyy] = birthDate.split('-');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
   async function handleSubmit() {
     setLoading(true);
     try {
       await userApi.submitQuestionnaire({
         gender,
-        birthDate,
+        birthDate: birthDateForApi(),
         heightCm: parseFloat(height) || 170,
         weightKg: parseFloat(weight) || 70,
         targetWeightKg: parseFloat(targetWeight) || 65,
@@ -274,9 +290,11 @@ export default function QuestionnaireScreen() {
               <TextInput
                 style={styles.textField}
                 value={birthDate}
-                onChangeText={setBirthDate}
-                placeholder="ГГГГ-ММ-ДД"
+                onChangeText={handleBirthDateInput}
+                placeholder="ДД-ММ-ГГГГ"
                 placeholderTextColor={COLORS.textMuted}
+                keyboardType="numeric"
+                maxLength={10}
               />
 
               <View style={styles.row3}>

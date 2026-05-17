@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Switch, Alert, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, Switch, Alert, TouchableOpacity, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,6 +45,10 @@ export default function ProfileScreen({ navigation }) {
   }
 
   function handleLogout() {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Выйти из аккаунта?')) logout();
+      return;
+    }
     Alert.alert('Выйти из аккаунта', 'Вы уверены?', [
       { text: 'Отмена', style: 'cancel' },
       { text: 'Выйти', style: 'destructive', onPress: logout },

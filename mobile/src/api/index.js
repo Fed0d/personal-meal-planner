@@ -1,18 +1,18 @@
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-const getHost = () => {
+const getBaseUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+  // Web build: relative paths, nginx proxies /api/ to the gateway
+  if (Platform.OS === 'web') return '';
+  // Native dev: detect Expo host, point to gateway
   const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest?.debuggerHost;
-  if (hostUri) return hostUri.split(':')[0];
-  return 'localhost';
+  if (hostUri) return `http://${hostUri.split(':')[0]}:8080`;
+  return 'http://localhost:8080';
 };
-const HOST = getHost();
 
-const AUTH = `http://${HOST}:8081`;
-const USER = `http://${HOST}:8082`;
-const MEAL = `http://${HOST}:8083`;
-const PLAN = `http://${HOST}:8084`;
-const ORCH = `http://${HOST}:8085`;
+const BASE = getBaseUrl();
 
 // ── Token refresh logic ──────────────────────────
 let onAuthErrorCallback = null;
@@ -28,7 +28,7 @@ async function doRefresh() {
   refreshPromise = (async () => {
     const refreshToken = await AsyncStorage.getItem('refreshToken');
     if (!refreshToken) throw new Error('No refresh token');
-    const res = await fetch(`${AUTH}/api/v1/auth/refresh`, {
+    const res = await fetch(`${BASE}/api/v1/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
@@ -47,14 +47,14 @@ async function getToken() {
   return AsyncStorage.getItem('accessToken');
 }
 
-async function request(base, path, options = {}, _isRetry = false) {
+async function request(path, options = {}, _isRetry = false) {
   const token = await getToken();
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
-  const res = await fetch(`${base}${path}`, { ...options, headers });
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
 
   if (res.status === 401 && !_isRetry) {
     try {
@@ -63,7 +63,7 @@ async function request(base, path, options = {}, _isRetry = false) {
       onAuthErrorCallback?.();
       throw { status: 401, message: 'Сессия истекла, войдите снова' };
     }
-    return request(base, path, options, true);
+    return request(path, options, true);
   }
 
   if (!res.ok) {
@@ -77,27 +77,27 @@ async function request(base, path, options = {}, _isRetry = false) {
 // ── AUTH ────────────────────────────────────────
 export const auth = {
   register: (email, password) =>
-    request(AUTH, '/api/v1/auth/register', {
+    request('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
   login: (email, password) =>
-    request(AUTH, '/api/v1/auth/login', {
+    request('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
   refresh: (refreshToken) =>
-    request(AUTH, '/api/v1/auth/refresh', {
+    request('/api/v1/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     }),
 
-  me: () => request(AUTH, '/api/v1/auth/me'),
+  me: () => request('/api/v1/auth/me'),
 
   logout: (refreshToken) =>
-    request(AUTH, '/api/v1/auth/logout', {
+    request('/api/v1/auth/logout', {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     }),
@@ -105,52 +105,52 @@ export const auth = {
 
 // ── USER ────────────────────────────────────────
 export const user = {
-  getProfile: () => request(USER, '/api/v1/users/me'),
+  getProfile: () => request('/api/v1/users/me'),
 
   updateProfile: (data) =>
-    request(USER, '/api/v1/users/me', {
+    request('/api/v1/users/me', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  getQuestionnaire: () => request(USER, '/api/v1/users/me/questionnaire'),
+  getQuestionnaire: () => request('/api/v1/users/me/questionnaire'),
 
   submitQuestionnaire: (data) =>
-    request(USER, '/api/v1/users/me/questionnaire', {
+    request('/api/v1/users/me/questionnaire', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  getCalorieTargets: () => request(USER, '/api/v1/users/me/calorie-targets'),
+  getCalorieTargets: () => request('/api/v1/users/me/calorie-targets'),
 
-  getCookingPrefs: () => request(USER, '/api/v1/users/me/preferences/cooking'),
+  getCookingPrefs: () => request('/api/v1/users/me/preferences/cooking'),
 
   updateCookingPrefs: (data) =>
-    request(USER, '/api/v1/users/me/preferences/cooking', {
+    request('/api/v1/users/me/preferences/cooking', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  getCuisinePrefs: () => request(USER, '/api/v1/users/me/preferences/cuisine'),
+  getCuisinePrefs: () => request('/api/v1/users/me/preferences/cuisine'),
 
   updateCuisinePrefs: (data) =>
-    request(USER, '/api/v1/users/me/preferences/cuisine', {
+    request('/api/v1/users/me/preferences/cuisine', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  getIngredientPrefs: () => request(USER, '/api/v1/users/me/preferences/ingredients'),
+  getIngredientPrefs: () => request('/api/v1/users/me/preferences/ingredients'),
 
   updateIngredientPrefs: (data) =>
-    request(USER, '/api/v1/users/me/preferences/ingredients', {
+    request('/api/v1/users/me/preferences/ingredients', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  getAllergens: () => request(USER, '/api/v1/users/me/allergens'),
+  getAllergens: () => request('/api/v1/users/me/allergens'),
 
   updateAllergens: (data) =>
-    request(USER, '/api/v1/users/me/allergens', {
+    request('/api/v1/users/me/allergens', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
@@ -158,18 +158,18 @@ export const user = {
 
 // ── DISH REACTIONS ──────────────────────────────
 export const dishReactions = {
-  getAll: () => request(USER, '/api/v1/users/me/dish-reactions'),
+  getAll: () => request('/api/v1/users/me/dish-reactions'),
 
-  getOne: (dishId) => request(USER, `/api/v1/users/me/dish-reactions/${dishId}`),
+  getOne: (dishId) => request(`/api/v1/users/me/dish-reactions/${dishId}`),
 
   set: (dishId, reaction) =>
-    request(USER, `/api/v1/users/me/dish-reactions/${dishId}`, {
+    request(`/api/v1/users/me/dish-reactions/${dishId}`, {
       method: 'PUT',
       body: JSON.stringify({ reaction }),
     }),
 
   remove: (dishId) =>
-    request(USER, `/api/v1/users/me/dish-reactions/${dishId}`, {
+    request(`/api/v1/users/me/dish-reactions/${dishId}`, {
       method: 'DELETE',
     }),
 };
@@ -182,36 +182,36 @@ export const dishes = {
     if (minCalories)  p.push(`minCalories=${encodeURIComponent(minCalories)}`);
     if (maxCalories)  p.push(`maxCalories=${encodeURIComponent(maxCalories)}`);
     if (title)        p.push(`title=${encodeURIComponent(title)}`);
-    return request(MEAL, `/api/v1/dishes?${p.join('&')}`);
+    return request(`/api/v1/dishes?${p.join('&')}`);
   },
 
-  getById: (id) => request(MEAL, `/api/v1/dishes/${id}`),
+  getById: (id) => request(`/api/v1/dishes/${id}`),
 };
 
 // ── MEAL PLANS ──────────────────────────────────
 export const mealPlans = {
-  getMy: () => request(PLAN, '/api/v1/meal-plans/my'),
+  getMy: () => request('/api/v1/meal-plans/my'),
 
-  getByDate: (date) => request(PLAN, `/api/v1/meal-plans/my/date/${date}`),
+  getByDate: (date) => request(`/api/v1/meal-plans/my/date/${date}`),
 
-  getById: (id) => request(PLAN, `/api/v1/meal-plans/${id}`),
+  getById: (id) => request(`/api/v1/meal-plans/${id}`),
 };
 
 // ── ORCHESTRATOR ─────────────────────────────────
 export const orchestrator = {
   generate: (date) =>
-    request(ORCH, '/api/v1/orchestrator/plans/generate', {
+    request('/api/v1/orchestrator/plans/generate', {
       method: 'POST',
       body: JSON.stringify({ date }),
     }),
 
   replace: (mealPlanId, mealSlot, currentDishId) =>
-    request(ORCH, '/api/v1/orchestrator/plans/replace', {
+    request('/api/v1/orchestrator/plans/replace', {
       method: 'POST',
       body: JSON.stringify({ mealPlanId, mealSlot, currentDishId }),
     }),
 
-  getTasks: () => request(ORCH, '/api/v1/orchestrator/tasks'),
+  getTasks: () => request('/api/v1/orchestrator/tasks'),
 
-  getTask: (jobId) => request(ORCH, `/api/v1/orchestrator/tasks/${jobId}`),
+  getTask: (jobId) => request(`/api/v1/orchestrator/tasks/${jobId}`),
 };
