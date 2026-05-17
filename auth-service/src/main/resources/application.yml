@@ -24,13 +24,13 @@ spring:
 
 auth:
   jwt:
-    private-key-path: classpath:keys/private_key.pem
+    private-key-path: ${JWT_PRIVATE_KEY_PATH:classpath:keys/private_key.pem}
     access-token-expiration-minutes: ${JWT_ACCESS_EXPIRATION_MINUTES:15}
     refresh-token-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:30}
 
 security:
   jwt:
-    public-key-path: classpath:keys/public_key.pem
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:classpath:keys/public_key.pem}
     issuer: auth-service
 
 service:

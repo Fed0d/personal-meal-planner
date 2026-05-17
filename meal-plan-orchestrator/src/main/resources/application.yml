@@ -36,7 +36,7 @@ spring:
 
 security:
   jwt:
-    public-key-path: classpath:keys/public_key.pem
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:classpath:keys/public_key.pem}
     issuer: auth-service
     enabled: true
 

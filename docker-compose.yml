@@ -59,6 +59,11 @@ services:
       SERVICE_API_KEY: ${SERVICE_API_KEY:-default-service-secret-key}
       JWT_ACCESS_EXPIRATION_MINUTES: ${JWT_ACCESS_EXPIRATION_MINUTES:-15}
       JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-30}
+      JWT_PRIVATE_KEY_PATH: file:/app/keys/private_key.pem
+      JWT_PUBLIC_KEY_PATH: file:/app/keys/public_key.pem
+    volumes:
+      - ./keys/private_key.pem:/app/keys/private_key.pem:ro
+      - ./keys/public_key.pem:/app/keys/public_key.pem:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,6 +80,9 @@ services:
       DB_NAME: user_db
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_PUBLIC_KEY_PATH: file:/app/keys/public_key.pem
+    volumes:
+      - ./keys/public_key.pem:/app/keys/public_key.pem:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,6 +99,9 @@ services:
       DB_NAME: meal_db
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_PUBLIC_KEY_PATH: file:/app/keys/public_key.pem
+    volumes:
+      - ./keys/public_key.pem:/app/keys/public_key.pem:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -107,6 +118,9 @@ services:
       DB_NAME: meal_plan_db
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_PUBLIC_KEY_PATH: file:/app/keys/public_key.pem
+    volumes:
+      - ./keys/public_key.pem:/app/keys/public_key.pem:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,6 +138,9 @@ services:
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_PUBLIC_KEY_PATH: file:/app/keys/public_key.pem
+    volumes:
+      - ./keys/public_key.pem:/app/keys/public_key.pem:ro
     depends_on:
       postgres:
         condition: service_healthy
