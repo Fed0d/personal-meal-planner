@@ -97,6 +97,11 @@ public class DishDataLoader implements ApplicationRunner {
                 .categoryPath(raw.categoryPath())
                 .recipe(raw.recipe())
                 .mealType(mealType)
+                // Curated dishes imported from food.ru are real verified recipes,
+                // distinguishing them from LLM-generated dishes that arrive later
+                // via POST /api/v1/dishes with aiGenerated=true and verified=false.
+                .aiGenerated(false)
+                .verified(true)
                 .build();
 
         if (raw.commonAllergens() != null) {

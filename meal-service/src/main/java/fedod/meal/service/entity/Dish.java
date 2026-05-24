@@ -65,6 +65,14 @@ public class Dish {
     @Column(name = "meal_type", nullable = false, length = 20)
     private MealType mealType;
 
+    @Builder.Default
+    @Column(name = "ai_generated", nullable = false)
+    private Boolean aiGenerated = false;
+
+    @Builder.Default
+    @Column(name = "verified", nullable = false)
+    private Boolean verified = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

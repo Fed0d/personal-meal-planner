@@ -18,6 +18,7 @@ import DishDetailScreen     from '../screens/main/DishDetailScreen';
 import ProfileScreen        from '../screens/main/ProfileScreen';
 import EditProfileScreen    from '../screens/main/EditProfileScreen';
 import TasksScreen          from '../screens/main/TasksScreen';
+import ChatScreen           from '../screens/main/ChatScreen';
 
 const Stack = createStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -78,6 +79,7 @@ function MainTabs() {
           const icons = {
             Home:     focused ? 'home'               : 'home-outline',
             MealPlan: focused ? 'calendar'           : 'calendar-outline',
+            Chat:     focused ? 'sparkles'           : 'sparkles-outline',
             Dishes:   focused ? 'restaurant'         : 'restaurant-outline',
             Tasks:    focused ? 'list'               : 'list-outline',
             Profile:  focused ? 'person-circle'      : 'person-circle-outline',
@@ -86,11 +88,12 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home"     component={HomeScreen}   options={{ tabBarLabel: 'Главная' }} />
+      <Tab.Screen name="Home"     component={HomeScreen}     options={{ tabBarLabel: 'Главная' }} />
       <Tab.Screen name="MealPlan" component={MealPlanStack}  options={{ tabBarLabel: 'Планы' }} />
-      <Tab.Screen name="Dishes"   component={DishesStack}  options={{ tabBarLabel: 'Блюда' }} />
-      <Tab.Screen name="Tasks"    component={TasksScreen}  options={{ tabBarLabel: 'Задачи' }} />
-      <Tab.Screen name="Profile"  component={ProfileStack}  options={{ tabBarLabel: 'Профиль' }} />
+      <Tab.Screen name="Chat"     component={ChatScreen}     options={{ tabBarLabel: 'Чат' }} />
+      <Tab.Screen name="Dishes"   component={DishesStack}    options={{ tabBarLabel: 'Блюда' }} />
+      <Tab.Screen name="Tasks"    component={TasksScreen}    options={{ tabBarLabel: 'Задачи' }} />
+      <Tab.Screen name="Profile"  component={ProfileStack}   options={{ tabBarLabel: 'Профиль' }} />
     </Tab.Navigator>
   );
 }

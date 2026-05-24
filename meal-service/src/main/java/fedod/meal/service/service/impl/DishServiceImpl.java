@@ -46,9 +46,14 @@ public class DishServiceImpl implements DishService {
     @Override
     @Transactional
     public DishResponse createDish(CreateDishRequest request) {
-        log.debug("Creating dish with id: {}", request.id());
+        Long dishId = resolveDishId(request);
+        boolean aiGenerated = Boolean.TRUE.equals(request.aiGenerated());
+        boolean verified = Boolean.TRUE.equals(request.verified());
+
+        log.debug("Creating dish id={} ai={} verified={}", dishId, aiGenerated, verified);
+
         Dish dish = Dish.builder()
-                .id(request.id())
+                .id(dishId)
                 .url(request.url())
                 .title(request.title())
                 .description(request.description())
@@ -63,6 +68,8 @@ public class DishServiceImpl implements DishService {
                 .categoryPath(request.categoryPath())
                 .recipe(request.recipe())
                 .mealType(request.mealType())
+                .aiGenerated(aiGenerated)
+                .verified(verified)
                 .build();
 
         if (request.allergens() != null) {
@@ -78,8 +85,23 @@ public class DishServiceImpl implements DishService {
         }
 
         Dish saved = dishRepository.save(dish);
-        log.info("Created dish id={} title={}", saved.getId(), saved.getTitle());
+        log.info("Created dish id={} title='{}' ai={}", saved.getId(), saved.getTitle(), saved.getAiGenerated());
         return toResponse(saved);
+    }
+
+    /**
+     * Curated dishes (food.ru import) supply an explicit positive id.
+     * AI-generated dishes from external services typically have id == null — we allocate
+     * the next negative id (id space below zero is reserved for AI-generated content).
+     */
+    private Long resolveDishId(CreateDishRequest request) {
+        if (request.id() != null) {
+            return request.id();
+        }
+        Long currentMin = dishRepository.findMinId().orElse(0L);
+        long nextId = Math.min(currentMin - 1, -1L);
+        log.debug("Allocated id {} for AI-generated dish", nextId);
+        return nextId;
     }
 
     private DishSummaryResponse toSummaryResponse(Dish dish) {
@@ -95,6 +117,8 @@ public class DishServiceImpl implements DishService {
                 .kitchenTime(dish.getKitchenTime())
                 .cuisine(dish.getCuisine())
                 .mealType(dish.getMealType())
+                .aiGenerated(dish.getAiGenerated())
+                .verified(dish.getVerified())
                 .allergens(dish.getAllergens().stream().map(DishAllergen::getAllergen).toList())
                 .ingredients(dish.getIngredients().stream().map(DishIngredient::getIngredient).toList())
                 .build();
@@ -117,6 +141,8 @@ public class DishServiceImpl implements DishService {
                 .categoryPath(dish.getCategoryPath())
                 .recipe(dish.getRecipe())
                 .mealType(dish.getMealType())
+                .aiGenerated(dish.getAiGenerated())
+                .verified(dish.getVerified())
                 .allergens(dish.getAllergens().stream().map(DishAllergen::getAllergen).toList())
                 .ingredients(dish.getIngredients().stream().map(DishIngredient::getIngredient).toList())
                 .createdAt(dish.getCreatedAt())

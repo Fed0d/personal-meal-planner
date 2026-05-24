@@ -20,6 +20,8 @@ public record DishSummaryResponse(
         String cuisine,
         MealType mealType,
         List<String> allergens,
-        List<String> ingredients
+        List<String> ingredients,
+        Boolean aiGenerated,
+        Boolean verified
 ) {
 }

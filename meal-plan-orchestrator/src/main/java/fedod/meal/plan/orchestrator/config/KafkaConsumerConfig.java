@@ -32,8 +32,6 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG,
                 environment.getProperty("spring.kafka.consumer.group-id"));
 
-        // useTypeHeaders=false: deserialize by target class, not Spring __TypeId__ header
-        // (Python publishes plain JSON without Spring type metadata headers)
         var jackson = new JacksonJsonDeserializer<>(JobUpdatedEvent.class, false);
         var ehd = new ErrorHandlingDeserializer<>(jackson);
 

@@ -139,6 +139,8 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_PUBLIC_KEY_PATH: file:/app/keys/public_key.pem
+      DIET_ASSISTANT_URL: ${DIET_ASSISTANT_URL:-http://diet-assistant:8080}
+      MEAL_ADVISOR_URL: ${MEAL_ADVISOR_URL:-http://meal-advisor:8000}
     volumes:
       - ./keys/public_key.pem:/app/keys/public_key.pem:ro
     depends_on:

@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/migrations/002-create-dish-allergen.yml
   - include:
       file: db/changelog/migrations/003-create-dish-ingredient.yml
+  - include:
+      file: db/changelog/migrations/004-add-dish-ai-fields.yml

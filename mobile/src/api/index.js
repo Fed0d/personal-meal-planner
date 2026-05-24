@@ -215,3 +215,15 @@ export const orchestrator = {
 
   getTask: (jobId) => request(`/api/v1/orchestrator/tasks/${jobId}`),
 };
+
+// ── AI CHAT ──────────────────────────────────────
+// Proxies to meal-advisor Python service via the orchestrator.
+// Backend route: POST /api/v1/orchestrator/chat/from-ingredients
+// Returns: { availableIngredients, gapReport, recipes: [...3] }
+export const chat = {
+  fromIngredients: ({ ingredients }) =>
+    request('/api/v1/orchestrator/chat/from-ingredients', {
+      method: 'POST',
+      body: JSON.stringify({ ingredients }),
+    }),
+};

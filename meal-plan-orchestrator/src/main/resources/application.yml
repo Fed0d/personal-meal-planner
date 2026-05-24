@@ -46,6 +46,16 @@ kafka:
     replace-mealplan-command: replace.mealplan.command
     job-updated-event: job.updated.event
 
+diet-assistant:
+  url: ${DIET_ASSISTANT_URL:http://diet-assistant:8080}
+  connect-timeout-ms: 5000
+  read-timeout-ms: 30000
+
+meal-advisor:
+  url: ${MEAL_ADVISOR_URL:http://meal-advisor:8000}
+  connect-timeout-ms: 5000
+  read-timeout-ms: 90000
+
 management:
   endpoints:
     web:

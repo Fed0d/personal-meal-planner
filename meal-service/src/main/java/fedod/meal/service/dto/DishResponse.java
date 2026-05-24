@@ -26,6 +26,8 @@ public record DishResponse(
         MealType mealType,
         List<String> allergens,
         List<String> ingredients,
+        Boolean aiGenerated,
+        Boolean verified,
         LocalDateTime createdAt
 ) {
 }

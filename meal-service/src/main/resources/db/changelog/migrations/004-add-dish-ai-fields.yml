@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-dish-ai-fields
+      author: fedod
+      changes:
+        - addColumn:
+            tableName: dish
+            columns:
+              - column:
+                  name: ai_generated
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: verified
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            tableName: dish
+            indexName: idx_dish_ai_generated
+            columns:
+              - column:
+                  name: ai_generated
